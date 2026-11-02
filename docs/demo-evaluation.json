@@ -1,0 +1,549 @@
+{
+  "model_id": "synthetic",
+  "data_class": "synthetic",
+  "selected_model": "gradient_boosting",
+  "label": "SYNTHETIC DEMO MODEL",
+  "trained_at": "2026-11-02T16:26:16.922803+00:00",
+  "target": "departure_delay_minutes",
+  "horizon_minutes": 120,
+  "features": [
+    "origin",
+    "dest",
+    "carrier",
+    "hour",
+    "month",
+    "dow",
+    "distance"
+  ],
+  "metrics": {
+    "historical_median": {
+      "validation": {
+        "mae": 10.140896739130435,
+        "rmse": 12.503375087829546
+      },
+      "test": {
+        "mae": 9.846354166666666,
+        "rmse": 12.395388297333273
+      }
+    },
+    "ridge": {
+      "validation": {
+        "mae": 7.739359765730597,
+        "rmse": 9.539915725249841
+      },
+      "test": {
+        "mae": 7.24492597471438,
+        "rmse": 9.01650171971375
+      }
+    },
+    "gradient_boosting": {
+      "validation": {
+        "mae": 7.376597569438221,
+        "rmse": 9.22395947504621
+      },
+      "test": {
+        "mae": 7.170744668420794,
+        "rmse": 8.982674704576125
+      }
+    }
+  },
+  "interval_radius": 15.502573794330068,
+  "interval_nominal_coverage": 0.9,
+  "interval_test_coverage": 0.9166666666666666,
+  "n": {
+    "train": 2272,
+    "validation": 736,
+    "test": 768
+  },
+  "windows": {
+    "train": [
+      "2025-01-01 09:04:00+00:00",
+      "2025-03-13 02:23:00+00:00"
+    ],
+    "validation": [
+      "2025-03-14 08:04:00+00:00",
+      "2025-04-06 02:14:00+00:00"
+    ],
+    "test": [
+      "2025-04-07 08:15:00+00:00",
+      "2025-05-01 02:26:00+00:00"
+    ]
+  },
+  "label_availability": "actual departure +24h; 2h issuance; conservative embargo",
+  "dataset_sha256": "7ac475de798284cc1373ef1960214b1d3a9d359761686a3fd4186e8fd35364be",
+  "validation_chart": [
+    {
+      "actual": 0.6,
+      "predicted": 3.8641808344002806
+    },
+    {
+      "actual": 21.7,
+      "predicted": 5.762849462525306
+    },
+    {
+      "actual": 17.0,
+      "predicted": 16.912288170360014
+    },
+    {
+      "actual": 32.7,
+      "predicted": 28.547252158993007
+    },
+    {
+      "actual": 27.5,
+      "predicted": 25.761546995053912
+    },
+    {
+      "actual": 16.1,
+      "predicted": 21.143752000019
+    },
+    {
+      "actual": 21.9,
+      "predicted": 12.01788237493297
+    },
+    {
+      "actual": 15.9,
+      "predicted": 14.908696168000791
+    },
+    {
+      "actual": 41.2,
+      "predicted": 25.535267022401225
+    },
+    {
+      "actual": 22.9,
+      "predicted": 27.789576671096828
+    },
+    {
+      "actual": 1.7,
+      "predicted": 6.431039218706203
+    },
+    {
+      "actual": 22.5,
+      "predicted": 21.407029512023126
+    },
+    {
+      "actual": 17.8,
+      "predicted": 13.103479509657065
+    },
+    {
+      "actual": 41.7,
+      "predicted": 24.32160688156997
+    },
+    {
+      "actual": 7.5,
+      "predicted": 5.276161030771696
+    },
+    {
+      "actual": 0.3,
+      "predicted": 4.985349224247186
+    },
+    {
+      "actual": 5.2,
+      "predicted": 17.30737814365972
+    },
+    {
+      "actual": 29.7,
+      "predicted": 30.685871142499035
+    },
+    {
+      "actual": 33.5,
+      "predicted": 25.222627008080057
+    },
+    {
+      "actual": 11.9,
+      "predicted": 15.141621537158343
+    },
+    {
+      "actual": 19.9,
+      "predicted": 23.41284419868191
+    },
+    {
+      "actual": 18.9,
+      "predicted": 27.734192304004935
+    },
+    {
+      "actual": 28.6,
+      "predicted": 29.217810793035994
+    },
+    {
+      "actual": 22.5,
+      "predicted": 8.112813189220875
+    },
+    {
+      "actual": 4.3,
+      "predicted": 8.519101746199425
+    },
+    {
+      "actual": 17.0,
+      "predicted": 19.679877404004916
+    },
+    {
+      "actual": 26.3,
+      "predicted": 18.283884924540192
+    },
+    {
+      "actual": 25.1,
+      "predicted": 20.254149026425207
+    },
+    {
+      "actual": -3.9,
+      "predicted": 3.7092782908364343
+    },
+    {
+      "actual": 7.9,
+      "predicted": 10.19291415415988
+    },
+    {
+      "actual": 15.1,
+      "predicted": 18.45939716923137
+    },
+    {
+      "actual": 27.4,
+      "predicted": 26.571290754635317
+    },
+    {
+      "actual": -9.5,
+      "predicted": 2.962410068798312
+    },
+    {
+      "actual": 1.1,
+      "predicted": 6.033336674582771
+    },
+    {
+      "actual": 4.2,
+      "predicted": 14.166580281419082
+    },
+    {
+      "actual": 22.2,
+      "predicted": 28.241719273678125
+    },
+    {
+      "actual": 45.7,
+      "predicted": 33.740654878358896
+    },
+    {
+      "actual": -5.8,
+      "predicted": 4.105376121669857
+    },
+    {
+      "actual": 14.5,
+      "predicted": 11.038908036506786
+    },
+    {
+      "actual": -8.1,
+      "predicted": 9.042646143386266
+    },
+    {
+      "actual": 22.5,
+      "predicted": 24.036594441673515
+    },
+    {
+      "actual": 16.1,
+      "predicted": 22.969889150980894
+    },
+    {
+      "actual": 9.7,
+      "predicted": 7.537508501642292
+    },
+    {
+      "actual": 2.2,
+      "predicted": 15.968092030042612
+    },
+    {
+      "actual": 10.4,
+      "predicted": 13.360803832603434
+    },
+    {
+      "actual": 20.3,
+      "predicted": 22.87376450371666
+    },
+    {
+      "actual": 25.6,
+      "predicted": 6.563719254641998
+    },
+    {
+      "actual": 27.0,
+      "predicted": 19.819636636669408
+    },
+    {
+      "actual": -1.8,
+      "predicted": 10.154174446994938
+    },
+    {
+      "actual": 30.1,
+      "predicted": 15.183908699926763
+    },
+    {
+      "actual": 27.6,
+      "predicted": 33.33979606320801
+    },
+    {
+      "actual": 9.7,
+      "predicted": 8.193058562028753
+    },
+    {
+      "actual": 18.0,
+      "predicted": 19.398842057116852
+    },
+    {
+      "actual": 38.8,
+      "predicted": 31.639566233387537
+    },
+    {
+      "actual": 25.5,
+      "predicted": 33.88360076668315
+    },
+    {
+      "actual": 9.1,
+      "predicted": 1.1757132008727724
+    },
+    {
+      "actual": 4.8,
+      "predicted": 10.903197332172121
+    },
+    {
+      "actual": 27.9,
+      "predicted": 27.39202345335973
+    },
+    {
+      "actual": 42.9,
+      "predicted": 29.20793767346788
+    },
+    {
+      "actual": 47.8,
+      "predicted": 33.261671790900294
+    },
+    {
+      "actual": 11.8,
+      "predicted": 7.069398038598831
+    },
+    {
+      "actual": 5.8,
+      "predicted": 9.66346073495148
+    },
+    {
+      "actual": 27.0,
+      "predicted": 18.823640435044798
+    },
+    {
+      "actual": 27.1,
+      "predicted": 31.29508434584978
+    },
+    {
+      "actual": 15.5,
+      "predicted": 3.944143644935713
+    },
+    {
+      "actual": 4.7,
+      "predicted": 5.988978241404619
+    },
+    {
+      "actual": 14.1,
+      "predicted": 7.961941380172444
+    },
+    {
+      "actual": 15.9,
+      "predicted": 16.27876126353282
+    },
+    {
+      "actual": 15.2,
+      "predicted": 24.439062910411575
+    },
+    {
+      "actual": 12.6,
+      "predicted": 5.508043796983222
+    },
+    {
+      "actual": 3.3,
+      "predicted": 3.8427051557009455
+    },
+    {
+      "actual": 21.5,
+      "predicted": 12.193376070466169
+    },
+    {
+      "actual": 24.7,
+      "predicted": 21.11506797066377
+    },
+    {
+      "actual": 15.7,
+      "predicted": 27.69506440814947
+    },
+    {
+      "actual": -6.8,
+      "predicted": 7.651270730134342
+    },
+    {
+      "actual": 21.3,
+      "predicted": 17.339711897504305
+    },
+    {
+      "actual": 24.8,
+      "predicted": 19.96954962105949
+    },
+    {
+      "actual": 21.4,
+      "predicted": 21.162903518781718
+    },
+    {
+      "actual": -1.5,
+      "predicted": 16.1352401456724
+    },
+    {
+      "actual": 19.8,
+      "predicted": 7.772008242718464
+    },
+    {
+      "actual": 22.4,
+      "predicted": 19.8103801387086
+    },
+    {
+      "actual": 25.9,
+      "predicted": 19.826263059186616
+    },
+    {
+      "actual": 12.3,
+      "predicted": 23.63183109892206
+    },
+    {
+      "actual": 14.0,
+      "predicted": 19.000509020169016
+    },
+    {
+      "actual": 17.9,
+      "predicted": 18.53753505583129
+    },
+    {
+      "actual": 24.9,
+      "predicted": 27.458128112244253
+    },
+    {
+      "actual": 17.6,
+      "predicted": 27.888735344733774
+    },
+    {
+      "actual": 9.2,
+      "predicted": 12.023212277269309
+    },
+    {
+      "actual": 24.7,
+      "predicted": 19.38345683034173
+    },
+    {
+      "actual": 17.8,
+      "predicted": 13.748184405605842
+    },
+    {
+      "actual": 14.1,
+      "predicted": 18.949878996491673
+    },
+    {
+      "actual": 32.6,
+      "predicted": 33.82320530947772
+    },
+    {
+      "actual": 2.4,
+      "predicted": 1.6938939014555403
+    },
+    {
+      "actual": 5.6,
+      "predicted": 7.660386965028358
+    },
+    {
+      "actual": 35.6,
+      "predicted": 26.32173397514539
+    },
+    {
+      "actual": 9.5,
+      "predicted": 25.911766272570485
+    },
+    {
+      "actual": 5.1,
+      "predicted": 8.782976368777836
+    },
+    {
+      "actual": -9.3,
+      "predicted": 3.788271779025591
+    },
+    {
+      "actual": 7.1,
+      "predicted": 7.691171943793184
+    },
+    {
+      "actual": 10.4,
+      "predicted": 18.179430519188237
+    },
+    {
+      "actual": 21.8,
+      "predicted": 19.862640730461408
+    },
+    {
+      "actual": 7.3,
+      "predicted": 5.154819953276492
+    },
+    {
+      "actual": 15.7,
+      "predicted": 17.1208684964338
+    },
+    {
+      "actual": 9.1,
+      "predicted": 15.186308053501484
+    },
+    {
+      "actual": 9.4,
+      "predicted": 22.4174270054804
+    },
+    {
+      "actual": 30.9,
+      "predicted": 32.94372567921537
+    },
+    {
+      "actual": -0.0,
+      "predicted": 8.287242010348395
+    },
+    {
+      "actual": 11.5,
+      "predicted": 12.330096760230328
+    },
+    {
+      "actual": 16.1,
+      "predicted": 20.660089414927715
+    },
+    {
+      "actual": 39.1,
+      "predicted": 36.17721488486418
+    }
+  ],
+  "caveat": "Residual intervals assume stable errors; temporal drift can invalidate 90% coverage.",
+  "global_permutation_importance": {
+    "origin": 0.9286755947717502,
+    "dest": 0.01718709092114364,
+    "carrier": 0.008044472073427992,
+    "hour": 3.7738334680884917,
+    "month": 0.0,
+    "dow": 0.6129417500053634,
+    "distance": -0.0008404109341831519
+  },
+  "rolling_origin": [
+    {
+      "start": "2025-03-02 08:17:00+00:00",
+      "train_n": 1888,
+      "test_n": 448,
+      "mae": 7.503502137671355,
+      "rmse": 9.30605638423199
+    },
+    {
+      "start": "2025-03-20 08:31:00+00:00",
+      "train_n": 2464,
+      "test_n": 450,
+      "mae": 7.915166735266319,
+      "rmse": 9.691483253605663
+    },
+    {
+      "start": "2025-04-07 08:15:00+00:00",
+      "train_n": 3040,
+      "test_n": 449,
+      "mae": 7.115876078198656,
+      "rmse": 8.87759244165926
+    }
+  ]
+}

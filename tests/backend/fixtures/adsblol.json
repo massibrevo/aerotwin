@@ -1,0 +1,1 @@
+{"ac":[{"hex":"400abc","flight":"BAW123  ","lat":51.2,"lon":-0.4,"alt_baro":35000,"gs":440,"track":180,"seen_pos":3,"baro_rate":0},{"hex":"abc123","flight":null,"lat":41.3,"lon":2.1,"alt_baro":"ground","gs":null,"seen_pos":0},{"hex":"bad001","lat":999,"lon":2},{"hex":"bad002","alt_baro":20000}],"msg":"No error","now":1735689600,"total":4,"ctime":1735689600,"ptime":1}
