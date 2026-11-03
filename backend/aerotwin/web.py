@@ -7,7 +7,18 @@ from fastapi.staticfiles import StaticFiles
 
 from aerotwin.config import ROOT
 
-ROUTES = ["/", "/radar", "/pulse", "/history", "/forecast", "/network", "/data", "/about", "/guide"]
+ROUTES = [
+    "/",
+    "/radar",
+    "/pulse",
+    "/history",
+    "/forecast",
+    "/analytics",
+    "/network",
+    "/data",
+    "/about",
+    "/guide",
+]
 
 
 def mount_frontend(app, directory: Path):

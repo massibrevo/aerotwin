@@ -1941,3 +1941,159 @@
     max-height: 150px;
   }
 }
+.favourite-action {
+  padding: 10px 20px 0;
+}
+.favourite-action button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.favourite-action button[aria-pressed="true"] {
+  color: #ad6e00;
+  background: #fff5dc;
+}
+.traffic-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px 18px 12px;
+}
+.traffic-tabs button {
+  flex: 1;
+  font-size: 11px;
+  padding: 7px;
+}
+.traffic-tabs button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.live-lookup {
+  padding: 0 18px 12px;
+  font-size: 11px;
+}
+.live-lookup form {
+  display: flex;
+  gap: 6px;
+}
+.live-lookup select {
+  min-width: 0;
+  flex: 1;
+  font-size: 11px;
+  padding: 7px;
+}
+.live-lookup button {
+  font-size: 10px;
+  padding: 6px;
+}
+.live-lookup > small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 10px;
+  padding-top: 6px;
+}
+.lookup-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  margin-top: 8px;
+}
+.lookup-result span {
+  color: var(--text-muted);
+}
+.lookup-warning,
+.reference-note {
+  padding: 12px 20px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.saved-aircraft {
+  padding: 0 18px 18px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.saved-aircraft > div {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.saved-aircraft strong,
+.saved-aircraft small {
+  display: block;
+  margin-bottom: 6px;
+}
+.saved-aircraft small {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.saved-aircraft button {
+  font-size: 10px;
+  margin-right: 5px;
+  padding: 6px;
+}
+.aircraft-reference {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+.aircraft-reference h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  margin: 0 0 14px;
+}
+.aircraft-reference h3 a {
+  font-weight: 400;
+  font-size: 10px;
+}
+.aircraft-reference dl {
+  margin: 0;
+}
+.aircraft-reference dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+}
+.aircraft-reference dt,
+.aircraft-reference dd {
+  font-size: 11px;
+  margin: 0;
+}
+.aircraft-reference dt {
+  color: var(--text-muted);
+}
+.aircraft-reference dd {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.aircraft-reference .reference-note {
+  padding: 8px 0;
+}
+.aircraft-reference > small,
+.aircraft-reference > p {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.route-reference {
+  margin-top: 14px;
+  background: var(--surface-soft);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+.route-reference strong {
+  color: #a16600;
+}
+.route-reference p {
+  font-weight: 650;
+  font-size: 15px;
+  margin: 8px 0;
+}
+.route-reference small {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.6;
+}

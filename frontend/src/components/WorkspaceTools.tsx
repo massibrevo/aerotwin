@@ -39,6 +39,13 @@ export function Tip({
 }
 export const sections = [
   {
+    path: "/analytics",
+    label: "Analytics studio",
+    description: "Compare periods, quality and schedule distributions",
+    icon: Activity,
+    color: "teal",
+  },
+  {
     path: "/",
     label: "Control tower",
     description: "Your airspace and data at a glance",

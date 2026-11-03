@@ -1,10 +1,10 @@
-# AeroTwin 0.3 — installazione, uso e interpretazione
+# AeroTwin 0.4 — installazione, uso e interpretazione
 
 AeroTwin è un'applicazione locale per osservare posizioni ADS-B, esplorare dati di programma dei voli, addestrare modelli temporali e confrontare scenari di coda. Questa distribuzione è pensata per una persona su un computer fidato, per ricerca, portfolio e didattica. La solidità tecnica dell'applicazione non equivale alla validazione aeronautica delle previsioni.
 
 ## 1. Installazione dalla distribuzione ZIP
 
-1. Scarica `aerotwin-0.3.0.zip` dalla release GitHub ed estrailo in una cartella scrivibile. Conserva tutti i file e le sottocartelle. Il relativo `.sha256` permette di controllare che il download sia integro; non è una firma digitale.
+1. Scarica `aerotwin-0.4.0.zip` dalla release GitHub ed estrailo in una cartella scrivibile. Conserva tutti i file e le sottocartelle. Il relativo `.sha256` permette di controllare che il download sia integro; non è una firma digitale.
 2. Installa Python **3.12 o 3.13**, con `pip` e `venv`. La prima preparazione scarica le librerie Python: serve Internet. La versione ZIP contiene già l'interfaccia compilata e non richiede Node.js per preparazione/esecuzione.
 3. Apri un terminale nella cartella estratta ed esegui:
 
@@ -130,7 +130,7 @@ Le snapshot e gli artefatti precedenti restano conservati: l'occupazione su disc
 - Mappe Natural Earth a bassa risoluzione e MapLibre non sono carte aeronautiche. Non usare l'app per navigazione.
 - Nessuna validazione/certificazione per dispatch, ATC o decisioni di sicurezza. Una CI verde dimostra i controlli software eseguiti, non l'accuratezza operativa dei modelli.
 
-Per formule e dettagli consulta `methodology.md`, `model-card.md`, `datasets-and-licenses.md` e `evaluation-v0.3.md`.
+Per formule e dettagli consulta `methodology.md`, `model-card.md`, `datasets-and-licenses.md` e `evaluation-v0.4.md`.
 
 
 ### Foto reali degli aeromobili
@@ -147,3 +147,18 @@ Il raggio personalizzato e la distanza del modello accettano la nuova unità e v
 
 
 Per una conversione immediata basta l’interruttore **Metric** nella barra superiore: attivo = m, km/h, km, m/s; disattivo = ft, kt, NM, ft/min. La scelta viene salvata. **Units** apre le impostazioni separate.
+
+
+## Novità 0.4: ricerca, preferiti e analisi scientifica
+
+Nel radar puoi cercare callsign, registrazione, codice ICAO e tipo fornito. In modalità **Live ADS-B**, scegli il tipo di ricerca e premi **Find worldwide** per una corrispondenza esatta nel feed globale. **Locate on radar** sposta la regione e seleziona l’aereo solo se compare nella nuova risposta. Nessuna corrispondenza non significa assenza di un volo.
+
+**Save aircraft** salva l’identità in questo browser; **Favourites** mostra i preferiti. Le identità live e sintetiche restano separate. Non vengono salvate posizioni, e un aereo fuori dalla fotografia corrente è indicato esplicitamente. Le etichette salvate non garantiscono callsign o assegnazione attuali.
+
+La scheda mostra riferimenti HexDB su costruttore, modello, proprietario registrato e codice operatore. Proprietario e compagnia operativa possono essere diversi. **Unverified route reference** è un’associazione di database al callsign, con data della fonte: non conferma la rotta del volo attuale e può essere vecchia. Dati mancanti rimangono sconosciuti.
+
+Apri **Analytics studio** e scegli il dataset storico. I periodi A e B devono essere ordinati e non sovrapposti. Il confronto mostra media, mediana, P90, quota di ritardi ≥15 minuti e cancellazioni, con denominatori e campioni. I ritardi escludono cancellazioni/deviazioni ed etichette mancanti. Il confronto standardizzato mantiene i pesi dei gruppi del periodo A (almeno 30 etichette per gruppo e periodo); la copertura indica quali dati restano rappresentati. Non è una stima causale. Puoi esportare statistiche e provenienza in JSON.
+
+In **Forecast lab**, i modelli nuovamente addestrati mostrano errori residui, confronto con la mediana storica, bootstrap per intere date, copertura per aeroporto/compagnia e cambiamenti nella distribuzione degli input. La sensibilità del singolo caso ricalcola la previsione sostituendo una variabile alla volta con un riferimento del training: non spiega cause e i contributi non si sommano. Il bootstrap presuppone date scambiabili; Wilson presuppone indipendenza dei voli, spesso approssimativa. Intervalli e copertura non sono garanzie.
+
+I vecchi modelli funzionano ancora: usa **Data & experiments → Train and evaluate model** sul dataset scelto per ottenere le nuove diagnostiche. Il modello sintetico non misura abilità previsionale sul traffico reale. Per questa valutazione importa dati BTS autentici e controlla separatamente qualità, copertura temporale e baseline. Dettagli: [metodologia 0.4](intelligence-v0.4.md).

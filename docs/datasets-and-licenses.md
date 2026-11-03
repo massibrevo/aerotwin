@@ -20,3 +20,8 @@ BTS raw files, processed imports and trained artifacts stay out of Git. Imports 
 ## Aircraft reference photographs
 
 Optional live-card thumbnails come from the [Planespotters.net Photo API](https://www.planespotters.net/photo/api). Copyright remains with each photographer; they are not MIT/ODbL assets. The returned thumbnail links to the source photo page with visible photographer credit. No photos are bundled or persisted by AeroTwin. Metadata is cached in memory for one hour. Synthetic/replay modes do not request photographs. Provider availability, matching accuracy and current livery are not guaranteed. See `radar-ui-v0.3.md` for network and caching behaviour.
+
+
+## Aircraft metadata references (0.4)
+
+Optional HexDB identity and callsign-route references use its documented keyless public API: https://hexdb.io/. Provider/source terms apply. No blanket open-data licence is assumed and no metadata mirror is bundled. Registered ownership does not establish the current operator; route records are explicitly unverified for a live observation and show their source update dates. Only short-lived, bounded memory caching is used. Selected public hex/callsign identifiers are sent to the source.

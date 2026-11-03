@@ -1,3 +1,4 @@
+import type { Diagnostics } from "./features/analytics/ModelDiagnostics";
 export type Mode = "demo" | "live" | "replay";
 export interface Airport {
   iata: string;
@@ -24,6 +25,7 @@ export interface Aircraft {
   data_age_seconds: number;
 }
 export interface Snapshot {
+  query_key?: string;
   mode: Mode;
   status: string;
   source: string;
@@ -70,6 +72,8 @@ export interface Summary {
   airlines: { carrier: string; flights: number; delay: number }[];
 }
 export interface Model {
+  diagnostics?: Diagnostics;
+  reference_values?: Record<string, string | number>;
   model_id: string;
   label: string;
   data_class: string;
@@ -110,6 +114,14 @@ export interface Model {
   caveat: string;
 }
 export interface Prediction {
+  sensitivity?: {
+    feature: string;
+    observed_value: string | number;
+    reference_value: string | number;
+    prediction_if_reference: number;
+    change_minutes: number;
+  }[];
+  sensitivity_caveat?: string;
   prediction_minutes: number;
   interval_minutes: number[];
   label: string;
@@ -181,6 +193,8 @@ export type RadarProps = {
   setPaused: (v: boolean) => void;
   age: number | null;
   refreshNow: () => void;
+  locateAircraft: (a: Aircraft) => void;
+  focusError?: string;
 };
 
 export interface DatasetInfo {

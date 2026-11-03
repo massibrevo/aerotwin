@@ -3,6 +3,7 @@
 import asyncio
 import json
 import math
+import re
 import time
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
@@ -78,12 +79,30 @@ class AdsbLolProvider:
 
     async def snapshot(self, lat, lon, radius_nm):
         key = (round(lat, 3), round(lon, 3), round(radius_nm, 1))
+        return await self.fetch(key, f"lat/{lat}/lon/{lon}/dist/{radius_nm}")
+
+    async def lookup(self, kind, query):
+        patterns = {
+            "hex": r"[0-9A-F]{6}",
+            "callsign": r"[A-Z0-9]{2,12}",
+            "registration": r"[A-Z0-9][A-Z0-9-]{1,15}",
+        }
+        query = query.strip().upper()
+        if kind not in patterns or not re.fullmatch(patterns[kind], query):
+            raise ValueError("Use an exact callsign, registration or six-digit ICAO hex code")
+        path = "reg" if kind == "registration" else kind
+        return await self.fetch(("search", kind, query), f"{path}/{query}")
+
+    async def fetch(self, key, path):
         async with self.lock:
             now = time.monotonic()
             if key in self.cache and now - self.cache[key][0] < 30:
                 cached = dict(self.cache[key][1])
                 cached["cached"] = True
                 return cached
+            if now < self.next_request and self.last_error is None and self.next_request - now <= 1.1:
+                await asyncio.sleep(self.next_request - now)
+                now = time.monotonic()
             if now < self.next_request:
                 return self.unavailable(
                     "Provider cooldown; retry after the displayed interval.",
@@ -93,11 +112,9 @@ class AdsbLolProvider:
                 async with httpx.AsyncClient(
                     timeout=10,
                     transport=self.transport,
-                    headers={"User-Agent": "AeroTwin/0.2 local aviation research"},
+                    headers={"User-Agent": "AeroTwin/0.4 (+https://github.com/massibrevo/aerotwin)"},
                 ) as client:
-                    response = await client.get(
-                        f"https://api.adsb.lol/v2/lat/{lat}/lon/{lon}/dist/{radius_nm}"
-                    )
+                    response = await client.get(f"https://api.adsb.lol/v2/{path}")
                 if response.status_code == 429:
                     try:
                         retry = min(600, max(30, float(response.headers.get("Retry-After", 60))))

@@ -353,6 +353,16 @@ test("switching to live clears demo aircraft and shows a connecting state", asyn
 test("real aircraft photo has source credit and handles an image failure", async ({
   page,
 }) => {
+  await page.route("**/api/v1/aircraft/*/details**", (route) =>
+    route.fulfill({
+      json: {
+        aircraft: null,
+        route_reference: null,
+        retrieved_at: new Date().toISOString(),
+        caveat: "Test database unavailable",
+      },
+    }),
+  );
   let lookups = 0;
   await page.route("**/api/v1/aircraft/*/photo", async (route) => {
     lookups++;

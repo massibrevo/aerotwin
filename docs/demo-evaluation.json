@@ -1,9 +1,73 @@
 {
   "model_id": "synthetic",
+  "format_version": 2,
+  "dataset_revision": "454a4fdd9f5fc603371911af022bcc0d25893c67e8fdda80cf5ce12e1f2726fd",
+  "sklearn_version": "1.9.1",
+  "support": {
+    "origins": [
+      "ATL",
+      "DFW",
+      "JFK",
+      "LAX",
+      "ORD"
+    ],
+    "destinations": [
+      "ATL",
+      "DFW",
+      "JFK",
+      "LAX",
+      "ORD"
+    ],
+    "carriers": [
+      "AA",
+      "DL",
+      "UA"
+    ],
+    "routes": [
+      "ATL-DFW",
+      "ATL-JFK",
+      "ATL-LAX",
+      "ATL-ORD",
+      "DFW-ATL",
+      "DFW-JFK",
+      "DFW-LAX",
+      "DFW-ORD",
+      "JFK-ATL",
+      "JFK-DFW",
+      "JFK-LAX",
+      "JFK-ORD",
+      "LAX-ATL",
+      "LAX-DFW",
+      "LAX-JFK",
+      "LAX-ORD",
+      "ORD-ATL",
+      "ORD-DFW",
+      "ORD-JFK",
+      "ORD-LAX"
+    ],
+    "numeric_ranges": {
+      "hour": [
+        5.0,
+        23.0
+      ],
+      "month": [
+        1.0,
+        3.0
+      ],
+      "dow": [
+        0.0,
+        6.0
+      ],
+      "distance": [
+        200.0,
+        2599.0
+      ]
+    }
+  },
   "data_class": "synthetic",
   "selected_model": "gradient_boosting",
   "label": "SYNTHETIC DEMO MODEL",
-  "trained_at": "2026-11-02T16:26:16.922803+00:00",
+  "trained_at": "2026-11-03T11:16:14.658498+00:00",
   "target": "departure_delay_minutes",
   "horizon_minutes": 120,
   "features": [
@@ -514,6 +578,359 @@
     }
   ],
   "caveat": "Residual intervals assume stable errors; temporal drift can invalidate 90% coverage.",
+  "diagnostics": {
+    "test_n": 768,
+    "bias_minutes": -0.3019180613388061,
+    "median_absolute_error": 6.013444803530364,
+    "p90_absolute_error": 14.583120458729367,
+    "coverage_wilson_95": [
+      0.8949845405505454,
+      0.9342012885935171
+    ],
+    "coverage_caveat": "Wilson interval treats flight outcomes as independent; correlated delays can make it too narrow.",
+    "baseline_mae_improvement_minutes": 2.675609498245873,
+    "baseline_improvement_block_bootstrap_95": [
+      2.1399596156393206,
+      3.2201688351584465
+    ],
+    "bootstrap_blocks": 24,
+    "bootstrap_repetitions": 500,
+    "bootstrap_caveat": "Paired resampling of whole schedule dates, weighted by flights; assumes daily blocks are exchangeable. Serial dependence between days can invalidate this interval. Positive means lower MAE than the historical-median baseline. This is evaluation, not model selection.",
+    "residual_histogram": [
+      {
+        "band": "<\u221260",
+        "flights": 0
+      },
+      {
+        "band": "\u221260\u2013<\u221230",
+        "flights": 0
+      },
+      {
+        "band": "\u221230\u2013<\u221215",
+        "flights": 37
+      },
+      {
+        "band": "\u221215\u2013<\u22125",
+        "flights": 194
+      },
+      {
+        "band": "\u22125\u2013<5",
+        "flights": 328
+      },
+      {
+        "band": "5\u2013<15",
+        "flights": 174
+      },
+      {
+        "band": "15\u2013<30",
+        "flights": 35
+      },
+      {
+        "band": "30\u2013<60",
+        "flights": 0
+      },
+      {
+        "band": "60+",
+        "flights": 0
+      }
+    ],
+    "daily_errors": [
+      {
+        "date": "2025-04-07",
+        "n": 32,
+        "mae": 5.535757037924425,
+        "baseline_mae": 8.184375,
+        "bias": 0.42559838656556415
+      },
+      {
+        "date": "2025-04-08",
+        "n": 32,
+        "mae": 5.735805096437168,
+        "baseline_mae": 7.96875,
+        "bias": 0.7986426770053608
+      },
+      {
+        "date": "2025-04-09",
+        "n": 32,
+        "mae": 7.034867787999554,
+        "baseline_mae": 9.540625,
+        "bias": 1.6830563424579161
+      },
+      {
+        "date": "2025-04-10",
+        "n": 32,
+        "mae": 6.726000827358359,
+        "baseline_mae": 10.409374999999999,
+        "bias": -1.3715517546200626
+      },
+      {
+        "date": "2025-04-11",
+        "n": 32,
+        "mae": 6.844866680465028,
+        "baseline_mae": 12.021875,
+        "bias": -0.24615304088163237
+      },
+      {
+        "date": "2025-04-12",
+        "n": 32,
+        "mae": 8.555377835727462,
+        "baseline_mae": 10.0,
+        "bias": -1.7120763501545155
+      },
+      {
+        "date": "2025-04-13",
+        "n": 32,
+        "mae": 7.162577851867876,
+        "baseline_mae": 10.487499999999999,
+        "bias": 0.24367875339168865
+      },
+      {
+        "date": "2025-04-14",
+        "n": 32,
+        "mae": 6.584678606141784,
+        "baseline_mae": 9.278125000000001,
+        "bias": 0.058080406632991355
+      },
+      {
+        "date": "2025-04-15",
+        "n": 32,
+        "mae": 7.996520652225415,
+        "baseline_mae": 9.125,
+        "bias": 0.19614691189904948
+      },
+      {
+        "date": "2025-04-16",
+        "n": 32,
+        "mae": 6.387128434194453,
+        "baseline_mae": 8.64375,
+        "bias": -0.5653499304484437
+      },
+      {
+        "date": "2025-04-17",
+        "n": 32,
+        "mae": 8.663443185964768,
+        "baseline_mae": 8.634375,
+        "bias": -0.6231215649174717
+      },
+      {
+        "date": "2025-04-18",
+        "n": 32,
+        "mae": 5.640273707502919,
+        "baseline_mae": 12.265625,
+        "bias": 0.25234829125542946
+      },
+      {
+        "date": "2025-04-19",
+        "n": 32,
+        "mae": 7.756121935726961,
+        "baseline_mae": 11.0875,
+        "bias": -1.417193393707604
+      },
+      {
+        "date": "2025-04-20",
+        "n": 32,
+        "mae": 7.089665509620964,
+        "baseline_mae": 9.015625,
+        "bias": -2.968443121755396
+      },
+      {
+        "date": "2025-04-21",
+        "n": 32,
+        "mae": 6.876421606700463,
+        "baseline_mae": 8.378125,
+        "bias": -2.180132329040809
+      },
+      {
+        "date": "2025-04-22",
+        "n": 32,
+        "mae": 7.279107060716617,
+        "baseline_mae": 10.665625,
+        "bias": 1.6543729142743064
+      },
+      {
+        "date": "2025-04-23",
+        "n": 32,
+        "mae": 6.661493624610024,
+        "baseline_mae": 9.759375,
+        "bias": 1.0730155216544617
+      },
+      {
+        "date": "2025-04-24",
+        "n": 32,
+        "mae": 8.677515396186802,
+        "baseline_mae": 11.415625,
+        "bias": 0.5340069576986444
+      },
+      {
+        "date": "2025-04-25",
+        "n": 32,
+        "mae": 7.898707349530605,
+        "baseline_mae": 11.35625,
+        "bias": 0.2997447607808492
+      },
+      {
+        "date": "2025-04-26",
+        "n": 32,
+        "mae": 7.521690727684335,
+        "baseline_mae": 8.734375,
+        "bias": -3.0021490197679275
+      },
+      {
+        "date": "2025-04-27",
+        "n": 32,
+        "mae": 7.8685348549344365,
+        "baseline_mae": 9.771875,
+        "bias": 0.9931614014724387
+      },
+      {
+        "date": "2025-04-28",
+        "n": 32,
+        "mae": 7.098347586954095,
+        "baseline_mae": 8.775,
+        "bias": -0.9457289979311831
+      },
+      {
+        "date": "2025-04-29",
+        "n": 32,
+        "mae": 7.724595982116301,
+        "baseline_mae": 9.5,
+        "bias": 0.41201653061891996
+      },
+      {
+        "date": "2025-04-30",
+        "n": 32,
+        "mae": 6.778372703508227,
+        "baseline_mae": 11.29375,
+        "bias": -0.8380038246139214
+      }
+    ],
+    "categorical_shift": [
+      {
+        "feature": "origin",
+        "total_variation": 0.04559125586854461,
+        "unseen_test_rows": 0
+      },
+      {
+        "feature": "dest",
+        "total_variation": 0.03433098591549297,
+        "unseen_test_rows": 0
+      },
+      {
+        "feature": "carrier",
+        "total_variation": 0.012195569248826282,
+        "unseen_test_rows": 0
+      }
+    ],
+    "numeric_support": [
+      {
+        "feature": "hour",
+        "train_min": 5.0,
+        "train_max": 23.0,
+        "test_outside_range": 0
+      },
+      {
+        "feature": "month",
+        "train_min": 1.0,
+        "train_max": 3.0,
+        "test_outside_range": 768
+      },
+      {
+        "feature": "dow",
+        "train_min": 0.0,
+        "train_max": 6.0,
+        "test_outside_range": 0
+      },
+      {
+        "feature": "distance",
+        "train_min": 200.0,
+        "train_max": 2599.0,
+        "test_outside_range": 0
+      }
+    ],
+    "subgroups": [
+      {
+        "dimension": "origin",
+        "group": "ATL",
+        "n": 139,
+        "mae": 7.91956672591809,
+        "bias": -0.4028616602853454,
+        "coverage": 0.9064748201438849,
+        "small_sample": false
+      },
+      {
+        "dimension": "origin",
+        "group": "DFW",
+        "n": 139,
+        "mae": 6.453658600410662,
+        "bias": -0.72669255813204,
+        "coverage": 0.9424460431654677,
+        "small_sample": false
+      },
+      {
+        "dimension": "origin",
+        "group": "JFK",
+        "n": 160,
+        "mae": 7.177180342118318,
+        "bias": -1.6022770325701068,
+        "coverage": 0.91875,
+        "small_sample": false
+      },
+      {
+        "dimension": "origin",
+        "group": "LAX",
+        "n": 168,
+        "mae": 7.269007396127478,
+        "bias": 0.49832386882476853,
+        "coverage": 0.9226190476190477,
+        "small_sample": false
+      },
+      {
+        "dimension": "origin",
+        "group": "ORD",
+        "n": 162,
+        "mae": 7.035256096908184,
+        "bias": 0.6035856821016631,
+        "coverage": 0.8950617283950617,
+        "small_sample": false
+      },
+      {
+        "dimension": "carrier",
+        "group": "AA",
+        "n": 257,
+        "mae": 7.2103034463842866,
+        "bias": -0.29459991149728254,
+        "coverage": 0.9105058365758755,
+        "small_sample": false
+      },
+      {
+        "dimension": "carrier",
+        "group": "DL",
+        "n": 245,
+        "mae": 7.3707193501319415,
+        "bias": -0.21601428500880027,
+        "coverage": 0.9102040816326531,
+        "small_sample": false
+      },
+      {
+        "dimension": "carrier",
+        "group": "UA",
+        "n": 266,
+        "mae": 6.948337138511587,
+        "bias": -0.3881105038580656,
+        "coverage": 0.9285714285714286,
+        "small_sample": false
+      }
+    ]
+  },
+  "reference_values": {
+    "origin": "ATL",
+    "dest": "ORD",
+    "carrier": "AA",
+    "hour": 23,
+    "month": 1,
+    "dow": 2,
+    "distance": 1402.0
+  },
   "global_permutation_importance": {
     "origin": 0.9286755947717502,
     "dest": 0.01718709092114364,
@@ -522,6 +939,15 @@
     "month": 0.0,
     "dow": 0.6129417500053634,
     "distance": -0.0008404109341831519
+  },
+  "permutation_repeat_std": {
+    "origin": 0.0491921527712984,
+    "dest": 0.01152534001006694,
+    "carrier": 0.012234994522608811,
+    "hour": 0.06427874347056715,
+    "month": 0.0,
+    "dow": 0.02776527414049994,
+    "distance": 0.030693018132135017
   },
   "rolling_origin": [
     {
@@ -545,5 +971,32 @@
       "mae": 7.115876078198656,
       "rmse": 8.87759244165926
     }
-  ]
+  ],
+  "subgroup_test_metrics": {
+    "ATL": {
+      "n": 139,
+      "mae": 7.91956672591809,
+      "rmse": 9.798945186620516
+    },
+    "DFW": {
+      "n": 139,
+      "mae": 6.453658600410662,
+      "rmse": 7.981426980348667
+    },
+    "JFK": {
+      "n": 160,
+      "mae": 7.177180342118318,
+      "rmse": 9.120416989439462
+    },
+    "LAX": {
+      "n": 168,
+      "mae": 7.269007396127478,
+      "rmse": 8.940529954613481
+    },
+    "ORD": {
+      "n": 162,
+      "mae": 7.035256096908184,
+      "rmse": 8.968194814426646
+    }
+  }
 }

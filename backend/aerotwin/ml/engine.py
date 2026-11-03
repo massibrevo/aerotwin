@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 import joblib
 import numpy as np
 import pandas as pd
+from aerotwin.analytics.diagnostics import evaluate
 from aerotwin.config import MODELS
 from aerotwin.data.store import load, dataset_revision
 from aerotwin.storage import record
@@ -127,10 +128,18 @@ def train(dataset="synthetic"):
         ],
         "caveat": "Residual intervals assume stable errors; temporal drift can invalidate 90% coverage.",
     }
+    report["diagnostics"] = evaluate(
+        tr, test, pred, candidates["historical_median"].predict(test[FEATURES]), q
+    )
+    report["reference_values"] = {
+        **{k: str(tr[k].mode().iloc[0]) for k in CAT},
+        **{k: float(tr[k].median()) if k == "distance" else int(tr[k].mode().iloc[0]) for k in NUM},
+    }
     importance = permutation_importance(
         model, val[FEATURES], val.dep_delay, n_repeats=3, random_state=42, scoring="neg_mean_absolute_error"
     )
     report["global_permutation_importance"] = dict(zip(FEATURES, importance.importances_mean.tolist()))
+    report["permutation_repeat_std"] = dict(zip(FEATURES, importance.importances_std.tolist()))
     # Expanding origin evaluations with independent embargoed folds.
     report["rolling_origin"] = []
     for fraction in [0.5, 0.65, 0.8]:
@@ -232,7 +241,30 @@ def predict(model_id, values):
     artifact = joblib.load(path)
     value = float(artifact["model"].predict(pd.DataFrame([values])[FEATURES])[0])
     q = artifact["radius"]
+    sensitivity = []
+    if report.get("reference_values"):
+        rows = []
+        keys = []
+        for key, reference in report["reference_values"].items():
+            changed = {**values, key: reference}
+            if changed["origin"] == changed["dest"]:
+                continue
+            rows.append(changed)
+            keys.append(key)
+        alternatives = artifact["model"].predict(pd.DataFrame(rows)[FEATURES]) if rows else []
+        sensitivity = [
+            {
+                "feature": key,
+                "observed_value": values[key],
+                "reference_value": report["reference_values"][key],
+                "prediction_if_reference": float(other),
+                "change_minutes": float(other - value),
+            }
+            for key, other in zip(keys, alternatives)
+        ]
     return {
+        "sensitivity": sensitivity,
+        "sensitivity_caveat": "One feature replaced at a time with its training median/mode; other inputs fixed. Hypothetical combinations may be unsupported. Changes are not additive contributions or causal effects.",
         "prediction_minutes": value,
         "interval_minutes": [value - q, value + q],
         "nominal_coverage": 0.9,

@@ -1,3 +1,6 @@
+import { useFavourites } from "../features/radar/favourites";
+import LiveLookup from "../features/radar/LiveLookup";
+import AircraftDetails from "../features/radar/AircraftDetails";
 import { useUnits } from "../units";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -23,6 +26,7 @@ import {
   Route,
   Eye,
   Radio,
+  Star,
 } from "lucide-react";
 import AircraftPhoto from "../features/radar/AircraftPhoto";
 import RadarMap from "../RadarMap";
@@ -33,6 +37,8 @@ import { useObservedTrail } from "../features/radar/useObservedTrail";
 
 export default function Radar(p: RadarProps) {
   const u = useUnits();
+  const favourites = useFavourites();
+  const [savedOnly, setSavedOnly] = useState(false);
   const [search, setSearch] = useState("");
   const [minAlt, setMinAlt] = useState(0);
   const [maxAlt, setMaxAlt] = useState(45000);
@@ -55,7 +61,7 @@ export default function Radar(p: RadarProps) {
     () =>
       (p.snapshot?.aircraft ?? []).filter(
         (a) =>
-          `${a.callsign ?? ""} ${a.icao24}`
+          `${a.callsign ?? ""} ${a.icao24} ${a.registration ?? ""} ${a.aircraft_type ?? ""}`
             .toLowerCase()
             .includes(search.toLowerCase()) &&
           ((a.altitude_ft === null && minAlt === 0) ||
@@ -351,6 +357,28 @@ export default function Radar(p: RadarProps) {
                     <X size={18} />
                   </button>
                 </div>
+                <div className="favourite-action">
+                  <button
+                    aria-pressed={favourites.has(picked, p.mode)}
+                    aria-label={
+                      favourites.has(picked, p.mode)
+                        ? "Remove aircraft from favourites"
+                        : "Save aircraft to favourites"
+                    }
+                    onClick={() => favourites.toggle(picked, p.mode)}
+                  >
+                    <Star
+                      size={16}
+                      fill={
+                        favourites.has(picked, p.mode) ? "currentColor" : "none"
+                      }
+                    />
+                    {favourites.has(picked, p.mode)
+                      ? "Saved aircraft"
+                      : "Save aircraft"}
+                  </button>
+                </div>
+                {favourites.error && <p role="alert">{favourites.error}</p>}
                 <div className="flight-identity">
                   <div>
                     <span className="overline">AIRCRAFT OBSERVATION</span>
@@ -370,7 +398,7 @@ export default function Radar(p: RadarProps) {
                   </span>
                 </div>
                 <AircraftPhoto
-                  key={`${p.mode}:${picked.icao24}`}
+                  key={`photo:${p.mode}:${picked.icao24}`}
                   aircraft={picked}
                   live={p.mode === "live"}
                 />
@@ -462,6 +490,11 @@ export default function Radar(p: RadarProps) {
                     </dd>
                   </div>
                 </dl>
+                <AircraftDetails
+                  key={`details:${p.mode}:${picked.icao24}`}
+                  aircraft={picked}
+                  live={p.mode === "live"}
+                />
                 <p className="flight-disclaimer">
                   <Info size={14} />
                   <span>
@@ -494,7 +527,7 @@ export default function Radar(p: RadarProps) {
                   <input
                     ref={searchRef}
                     aria-label="Search aircraft"
-                    placeholder="Find a callsign or ICAO hex…"
+                    placeholder="Callsign, registration or ICAO hex…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
@@ -509,6 +542,95 @@ export default function Radar(p: RadarProps) {
                     <kbd>/</kbd>
                   )}
                 </div>
+                <div className="traffic-tabs">
+                  <button
+                    aria-pressed={!savedOnly}
+                    onClick={() => setSavedOnly(false)}
+                  >
+                    In coverage
+                  </button>
+                  <button
+                    aria-pressed={savedOnly}
+                    onClick={() => setSavedOnly(true)}
+                  >
+                    Favourites ({favourites.favourites.length})
+                  </button>
+                </div>
+                {p.focusError && (
+                  <p className="lookup-warning" role="alert">
+                    {p.focusError}
+                  </p>
+                )}
+                {p.mode === "live" && !savedOnly && (
+                  <LiveLookup
+                    query={search}
+                    onLocate={(a) => {
+                      resetFilters();
+                      p.locateAircraft(a);
+                    }}
+                  />
+                )}
+                {savedOnly && (
+                  <div className="saved-aircraft" aria-label="Saved aircraft">
+                    {!favourites.favourites.length && (
+                      <p>
+                        Save aircraft from their observation card. Favourites
+                        stay on this browser; positions are not stored.
+                      </p>
+                    )}
+                    {favourites.favourites
+                      .filter((f) =>
+                        `${f.label} ${f.icao24} ${f.registration ?? ""}`
+                          .toLowerCase()
+                          .includes(search.toLowerCase()),
+                      )
+                      .map((f) => {
+                        const observed =
+                          f.mode === p.mode
+                            ? p.snapshot?.aircraft.find(
+                                (a) => a.icao24.toLowerCase() === f.icao24,
+                              )
+                            : undefined;
+                        return (
+                          <div key={`${f.mode}:${f.icao24}`}>
+                            <strong>{f.label}</strong>
+                            <small>
+                              {f.registration ?? f.icao24.toUpperCase()} ·{" "}
+                              {f.mode.toUpperCase()} ·{" "}
+                              {observed
+                                ? "In current snapshot"
+                                : "Not in current snapshot"}
+                            </small>
+                            {observed ? (
+                              <button onClick={() => p.setSelected(observed)}>
+                                Inspect saved aircraft
+                              </button>
+                            ) : f.mode === "live" && p.mode === "live" ? (
+                              <button
+                                onClick={() => {
+                                  setSavedOnly(false);
+                                  setSearch(f.icao24);
+                                }}
+                              >
+                                Find live position
+                              </button>
+                            ) : (
+                              <span className="muted">
+                                Switch to {f.mode} to inspect this favourite.
+                              </span>
+                            )}
+                            <button
+                              aria-label={`Remove favourite ${f.label}`}
+                              onClick={() => favourites.remove(f)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        );
+                      })}
+                    {favourites.error && <p role="alert">{favourites.error}</p>}
+                  </div>
+                )}
                 {filters && (
                   <div className="traffic-filters">
                     <div className="floating-heading">
@@ -566,67 +688,75 @@ export default function Radar(p: RadarProps) {
                     )}
                   </div>
                 )}
-                <div className="traffic-column-head">
-                  <span>AIRCRAFT</span>
-                  <span>ALTITUDE / SPEED</span>
-                </div>
-                <div className="aircraft-scroll">
-                  {rows.map((a) => (
-                    <button
-                      key={a.icao24}
-                      className="aircraft-row"
-                      onClick={() => p.setSelected(a)}
-                    >
-                      <span className="traffic-plane">
-                        <Plane
-                          size={19}
-                          style={{
-                            transform: `rotate(${(a.track_deg ?? 0) - 45}deg)`,
-                          }}
-                        />
-                      </span>
-                      <span>
-                        <strong>{a.callsign ?? a.icao24.toUpperCase()}</strong>
-                        <small>
-                          {a.aircraft_type ?? a.icao24.toUpperCase()}
-                          {a.registration ? " · " + a.registration : ""}
-                        </small>
-                      </span>
-                      <span>
-                        <strong>
-                          {a.ground
-                            ? "Ground"
-                            : u.number(a.altitude_ft, "altitude")}
-                          <small className="inline-unit">
-                            {a.ground ? "" : ` ${u.label("altitude")}`}
-                          </small>
-                        </strong>
-                        <small>
-                          {u.format(a.ground_speed_kt, "speed")}{" "}
-                          <ChevronRight size={11} />
-                        </small>
-                      </span>
-                    </button>
-                  ))}
-                  {!rows.length && (
-                    <div className="traffic-empty">
-                      <Search size={24} />
-                      <h3>
-                        {waiting
-                          ? "Loading observations…"
-                          : "No aircraft to display"}
-                      </h3>
-                      <p>
-                        {p.snapshot?.status === "unavailable"
-                          ? "The live provider is unavailable. Choose demo explicitly to explore offline."
-                          : "Try a different search or widen your filters."}
-                      </p>
-                      {activeFilters > 0 && (
-                        <button onClick={resetFilters}>Clear filters</button>
+                {!savedOnly && (
+                  <>
+                    <div className="traffic-column-head">
+                      <span>AIRCRAFT</span>
+                      <span>ALTITUDE / SPEED</span>
+                    </div>
+                    <div className="aircraft-scroll">
+                      {rows.map((a) => (
+                        <button
+                          key={a.icao24}
+                          className="aircraft-row"
+                          onClick={() => p.setSelected(a)}
+                        >
+                          <span className="traffic-plane">
+                            <Plane
+                              size={19}
+                              style={{
+                                transform: `rotate(${(a.track_deg ?? 0) - 45}deg)`,
+                              }}
+                            />
+                          </span>
+                          <span>
+                            <strong>
+                              {a.callsign ?? a.icao24.toUpperCase()}
+                            </strong>
+                            <small>
+                              {a.aircraft_type ?? a.icao24.toUpperCase()}
+                              {a.registration ? " · " + a.registration : ""}
+                            </small>
+                          </span>
+                          <span>
+                            <strong>
+                              {a.ground
+                                ? "Ground"
+                                : u.number(a.altitude_ft, "altitude")}
+                              <small className="inline-unit">
+                                {a.ground ? "" : ` ${u.label("altitude")}`}
+                              </small>
+                            </strong>
+                            <small>
+                              {u.format(a.ground_speed_kt, "speed")}{" "}
+                              <ChevronRight size={11} />
+                            </small>
+                          </span>
+                        </button>
+                      ))}
+                      {!rows.length && (
+                        <div className="traffic-empty">
+                          <Search size={24} />
+                          <h3>
+                            {waiting
+                              ? "Loading observations…"
+                              : "No aircraft to display"}
+                          </h3>
+                          <p>
+                            {p.snapshot?.status === "unavailable"
+                              ? "The live provider is unavailable. Choose demo explicitly to explore offline."
+                              : "Try a different search or widen your filters."}
+                          </p>
+                          {activeFilters > 0 && (
+                            <button onClick={resetFilters}>
+                              Clear filters
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
                 <div className="traffic-footer">
                   <Eye size={14} />
                   <span>

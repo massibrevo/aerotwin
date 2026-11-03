@@ -1,3 +1,5 @@
+import { saveJson } from "../features/analytics/export";
+import ModelDiagnostics from "../features/analytics/ModelDiagnostics";
 import { useUnits } from "../units";
 import { useEffect, useState } from "react";
 import { FlaskConical } from "lucide-react";
@@ -205,6 +207,43 @@ export default function Forecast() {
                   {num(result.interval_minutes[1], 1)} min
                 </b>
               </p>
+              {!!result.sensitivity?.length && (
+                <div
+                  className="prediction-sensitivity"
+                  aria-label="Per-flight sensitivity"
+                >
+                  <h3>What changes this prediction?</h3>
+                  <p className="small muted">{result.sensitivity_caveat}</p>
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Feature</th>
+                          <th>Training reference</th>
+                          <th>Prediction change / min</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {result.sensitivity.map((row) => (
+                          <tr key={row.feature}>
+                            <td>{row.feature}</td>
+                            <td>
+                              {row.feature === "distance"
+                                ? u.format(
+                                    Number(row.reference_value),
+                                    "routeDistance",
+                                    1,
+                                  )
+                                : String(row.reference_value)}
+                            </td>
+                            <td>{num(row.change_minutes, 2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
               <p className="small muted">
                 {result.caveat} {result.warnings.join(" ")}
               </p>
@@ -213,7 +252,17 @@ export default function Forecast() {
         </Panel>
         <Panel
           title="Temporal holdout evaluation"
-          aside={<span className="tiny">ACTUALLY MEASURED</span>}
+          aside={
+            <button
+              disabled={!model}
+              onClick={() =>
+                model &&
+                saveJson(model, `aerotwin-${modelId}-model-report.json`)
+              }
+            >
+              Export model report
+            </button>
+          }
         >
           <table className="metric-table">
             <thead>
@@ -260,7 +309,7 @@ export default function Forecast() {
           <div className="integrity-row">
             <span>Measured test interval coverage</span>
             <strong>
-              {num((model?.interval_test_coverage ?? 0) * 100, 1)}%
+              {num(model ? model.interval_test_coverage * 100 : null, 1)}%
             </strong>
           </div>
         </Panel>
@@ -316,6 +365,10 @@ export default function Forecast() {
           </p>
         </Panel>
       </div>
+      <ModelDiagnostics
+        data={model?.diagnostics}
+        label={model?.label ?? "Model not selected"}
+      />
       <Panel title="Train with official data">
         <p className="muted">
           The bundled model learns a seeded synthetic process. Its scores are

@@ -35,7 +35,7 @@ def test_static_routes_assets_missing_api_and_traversal(tmp_path):
     local = FastAPI()
     mount_frontend(local, tmp_path)
     c = TestClient(local)
-    for path in ["/", "/radar", "/data", "/guide"]:
+    for path in ["/", "/radar", "/analytics", "/data", "/guide"]:
         assert "AeroTwin release" in c.get(path).text
     assert c.get("/assets/app.js").status_code == 200
     assert c.get("/api/v1/unknown").status_code == 404

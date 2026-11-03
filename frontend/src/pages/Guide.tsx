@@ -43,6 +43,37 @@ export default function Guide() {
           </p>
         </div>
         <div className="guide-step">
+          <h3>Ricerca e preferiti</h3>
+          <p>
+            Nel radar cerca callsign, registrazione o ICAO. In Live ADS-B,{" "}
+            <b>Find worldwide</b> cerca una corrispondenza esatta e{" "}
+            <b>Locate on radar</b> sposta la regione. <b>Save aircraft</b> e{" "}
+            <b>Favourites</b> conservano solo identità nel browser, con
+            live/demo/replay separati. Le schede aggiungono riferimenti HexDB:
+            proprietario registrato e compagnia operativa possono differire; le
+            rotte da callsign sono sempre riferimenti non verificati, con data
+            della fonte.
+          </p>
+        </div>
+        <div className="guide-step">
+          <h3>Analytics studio e diagnostica</h3>
+          <p>
+            Apri <Link to="/analytics">Analytics studio</Link>, scegli il
+            dataset e confronta periodi A e B senza sovrapposizione. Controlla
+            campioni, etichette mancanti, denominatori e composizione dei
+            gruppi; esporta il confronto in JSON. Il cambiamento standardizzato
+            resta descrittivo, non causale.
+          </p>
+          <p>
+            In Forecast lab i nuovi modelli mostrano residui, bootstrap per data
+            contro la baseline, copertura per gruppo e cambiamenti degli input.
+            La sensibilità ricalcola una variabile alla volta: non è una
+            spiegazione causale né una somma di contributi. Per modelli
+            preesistenti, riaddestra esplicitamente il dataset scelto per
+            generare queste diagnostiche.
+          </p>
+        </div>
+        <div className="guide-step">
           <h3>3. Carica dati storici e addestra</h3>
           <p>
             In <Link to="/data">Data & experiments</Link>, importa un CSV

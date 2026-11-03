@@ -12,6 +12,8 @@ from typing import Literal
 from aerotwin.config import AIRPORTS, DATA, VERSION
 from aerotwin.data.store import load, query, summary, ingest_bts, provenance, dataset_revision
 from aerotwin.ml.engine import predict, reports, validated_model
+from aerotwin.analytics.comparison import compare
+from aerotwin.providers.details import AircraftDetails
 from aerotwin.providers.photos import AircraftPhotos
 from aerotwin.providers.aircraft import AdsbLolProvider, RecordedReplayProvider, SyntheticProvider
 from aerotwin.simulation.engine import network, simulate
@@ -75,6 +77,7 @@ app.add_middleware(
 )
 live = AdsbLolProvider()
 photos = AircraftPhotos()
+reference_details = AircraftDetails()
 
 
 @app.get("/api/v1/aircraft/{icao24}/photo")
@@ -153,6 +156,31 @@ async def aircraft(
     if mode == "replay":
         return RecordedReplayProvider().snapshot(frame)
     return SyntheticProvider().snapshot(lat, lon, radius_nm, frame)
+
+
+@app.get("/api/v1/aircraft/search")
+async def search_aircraft(
+    kind: Literal["hex", "callsign", "registration"], query: str = Query(min_length=2, max_length=16)
+):
+    return await live.lookup(kind, query)
+
+
+@app.get("/api/v1/aircraft/{icao24}/details")
+async def aircraft_details(icao24: str, callsign: str | None = Query(None, max_length=12)):
+    return await reference_details.lookup(icao24, callsign)
+
+
+@app.get("/api/v1/analytics/comparison")
+def comparison(
+    dataset: Dataset = "synthetic",
+    a_start: date | None = None,
+    a_end: date | None = None,
+    b_start: date | None = None,
+    b_end: date | None = None,
+    group: Literal["origin", "dest", "carrier", "route"] = "carrier",
+):
+    values = [value.isoformat() if value else None for value in [a_start, a_end, b_start, b_end]]
+    return compare(dataset, *values, group=group)
 
 
 @app.get("/api/v1/aircraft/stream")
@@ -322,6 +350,18 @@ def sources():
                 "license": "ODbL",
                 "url": "https://api.adsb.lol/docs",
                 "note": "No live positions redistributed in repository",
+            },
+            {
+                "name": "HexDB aircraft and route references",
+                "class": "OPTIONAL DATABASE · ROUTES UNVERIFIED",
+                "license": "Provider/source terms; not bundled or relicensed",
+                "url": "https://hexdb.io/",
+            },
+            {
+                "name": "Planespotters.net thumbnails",
+                "class": "OPTIONAL REFERENCE PHOTOS",
+                "license": "Photographer copyright; API terms",
+                "url": "https://www.planespotters.net/photo/api",
             },
             {
                 "name": "BTS On-Time Performance",

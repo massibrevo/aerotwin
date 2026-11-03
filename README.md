@@ -4,7 +4,7 @@
 
 [Guida completa in italiano](docs/guida-italiano.md) · [Download releases](https://github.com/massibrevo/aerotwin/releases) · [Scientific methodology](docs/methodology.md)
 
-AeroTwin **0.3.0** runs a compiled React interface and Python API on **one local server**. No API keys, cloud account, hosted database, telemetry, GPU or LLM. First setup needs Internet for open-source dependencies; the offline demonstration then works without network. Live observations and optional online tiles require network access.
+AeroTwin **0.4.0** runs a compiled React interface and Python API on **one local server**. No API keys, cloud account, hosted database, telemetry, GPU or LLM. First setup needs Internet for open-source dependencies; the offline demonstration then works without network. Live observations and optional online tiles require network access.
 
 > Research, teaching and portfolio use only. No certification for dispatch, air traffic control, navigation or safety decisions. Software tests do not validate real aviation forecasting accuracy.
 
@@ -12,7 +12,7 @@ AeroTwin **0.3.0** runs a compiled React interface and Python API on **one local
 
 ## Install a distribution ZIP
 
-Download `aerotwin-0.3.0.zip` from [Releases](https://github.com/massibrevo/aerotwin/releases), extract it, install **Python 3.12 or 3.13**, and run inside the extracted directory:
+Download `aerotwin-0.4.0.zip` from [Releases](https://github.com/massibrevo/aerotwin/releases), extract it, install **Python 3.12 or 3.13**, and run inside the extracted directory:
 
 ```bash
 python scripts/bootstrap.py
@@ -41,6 +41,14 @@ python scripts/serve.py
 Use `python3.12`/`python3` if appropriate on macOS/Linux or `py -3.12` on Windows. Use `--source-build` to force a frontend rebuild. For development/testing, `python scripts/bootstrap.py --dev` installs test dependencies and compiles; `python scripts/dev.py` retains the separate Vite/API development servers.
 
 Optional **AEROTWIN_HOME** selects a private writable state directory outside the source. Set it consistently for bootstrap, CLI and server. Without it, state stays inside the project. Existing 0.1 BTS snapshots can be read, but legacy models must be retrained. Bootstrap upgrades the demo artifact format. [Backup/update instructions](docs/guida-italiano.md#7-backup-aggiornamenti-e-manutenzione).
+
+## Aircraft discovery and analytics studio
+
+**0.4** adds registration/callsign/hex search, exact worldwide live lookups and browser-local favourites. Aircraft cards show sourced manufacturer/model and registered-owner details; callsign-route records remain explicitly unverified references with their source update dates.
+
+**Analytics studio** compares schedule periods with quality checks, labelled-sample denominators, distribution plots, group changes, mix-standardisation and JSON export. **Forecast lab** adds residual diagnostics, paired date-block bootstrap comparisons against the baseline, subgroup coverage, input-support shift and recomputed per-flight sensitivity. Synthetic scores remain software demonstrations, not an aviation benchmark. [Usage, methodology and limits](docs/intelligence-v0.4.md).
+
+![Analytics studio on explicitly synthetic schedule records](docs/screenshots/analytics-v0.4.png)
 
 ## Redesigned radar and workspace
 
@@ -106,7 +114,7 @@ AEROTWIN_URL=http://127.0.0.1:5188 npm run test:e2e
 python scripts/package_release.py
 ```
 
-On Windows use `.venv\Scripts\python` and PowerShell environment syntax. See [release verification](docs/evaluation-v0.3.md) and [troubleshooting](docs/troubleshooting.md). Local macOS browser checks can select installed Chrome with `AEROTWIN_BROWSER_CHANNEL=chrome`; Linux CI uses Playwright Chromium.
+On Windows use `.venv\Scripts\python` and PowerShell environment syntax. See [release verification](docs/evaluation-v0.4.md) and [troubleshooting](docs/troubleshooting.md). Local macOS browser checks can select installed Chrome with `AEROTWIN_BROWSER_CHANNEL=chrome`; Linux CI uses Playwright Chromium.
 
 Code/examples **MIT**, offline Natural Earth **public domain**, ADSB.lol observations **ODbL**, optional OpenFreeMap/OSM subject to provider terms and attribution. [Sources/licenses](docs/datasets-and-licenses.md). No public-hosting authentication layer is supplied: keep the server on loopback.
 

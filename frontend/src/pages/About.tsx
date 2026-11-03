@@ -84,6 +84,32 @@ export default function About() {
           tail rotation.
         </p>
       </Panel>
+      <Panel title="Period comparisons and model diagnostics">
+        <p>
+          Analytics studio compares non-overlapping schedule periods. Delay
+          statistics exclude cancelled/diverted and missing labels; cancellation
+          rates use all rows. Mix-standardisation uses A's labelled-flight
+          weights for shared groups with at least 30 labels per period. Coverage
+          is shown. Neither raw nor standardised changes identify causal
+          effects.
+        </p>
+        <p>
+          Forecast diagnostics use the final holdout. A 500-resample paired
+          date-block bootstrap compares MAE with the training-median baseline;
+          it assumes exchangeable date blocks. Wilson coverage intervals assume
+          independent flights and can be too narrow under correlation. Subgroup
+          metrics and category distribution shifts are descriptive; input shift
+          does not establish performance drift. Per-flight sensitivity replaces
+          one feature at a time with a training reference, recomputing the
+          model: changes are neither additive nor causal.
+        </p>
+        <p>
+          HexDB manufacturer/model and registered-owner details are optional
+          database references. Callsign route records may be old or reused; they
+          are labelled unverified for the selected observation, with source
+          dates. Missing metadata stays unknown.
+        </p>
+      </Panel>
       <Panel title="Open data, offline by design">
         <p>
           Code and seeded examples: MIT. Offline basemap: Natural Earth public

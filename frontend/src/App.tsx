@@ -27,6 +27,7 @@ import ForecastView from "./pages/Forecast";
 import SimulatorView from "./pages/Simulator";
 import DataPageView from "./pages/DataPage";
 import AboutView from "./pages/About";
+import AnalyticsView from "./pages/Analytics";
 import GuideView from "./pages/Guide";
 import { WorkspaceTools, Tip } from "./components/WorkspaceTools";
 import { motion } from "motion/react";
@@ -39,12 +40,14 @@ const Simulator = memo(SimulatorView);
 const DataPage = memo(DataPageView);
 const About = memo(AboutView);
 const Guide = memo(GuideView);
+const Analytics = memo(AnalyticsView);
 const nav = [
   ["/", "Control tower", Gauge],
   ["/radar", "Live radar", Radio],
   ["/pulse", "Airport pulse", Activity],
   ["/history", "Historical explorer", Layers],
   ["/forecast", "Forecast lab", FlaskConical],
+  ["/analytics", "Analytics studio", Activity],
   ["/network", "Disruption simulator", GitBranch],
   ["/data", "Data & experiments", Database],
   ["/about", "Methodology", BookOpen],
@@ -62,6 +65,8 @@ export default function App() {
   const [region, setRegion] = useState<Airport>(presets[0]);
   const [radius, setRadius] = useState(100);
   const [snapshot, setSnapshot] = useState<Snapshot>();
+  const [pendingFocus, setPendingFocus] = useState<string>();
+  const [focusError, setFocusError] = useState("");
   const [radarError, setRadarError] = useState("");
   const [selected, setSelected] = useState<Aircraft>();
   const [frame, setFrame] = useState(0);
@@ -75,6 +80,7 @@ export default function App() {
   useLayoutEffect(() => {
     setSnapshot(undefined);
     setSelected(undefined);
+    setFocusError("");
   }, [mode, region, radius]);
   useEffect(() => {
     setRadarError("");
@@ -83,7 +89,13 @@ export default function App() {
       `/aircraft?mode=${mode}&lat=${region.lat}&lon=${region.lon}&radius_nm=${radius}&frame=${frame}`,
       { signal: abort.signal },
     )
-      .then(setSnapshot)
+      .then((data) => {
+        if (!abort.signal.aborted)
+          setSnapshot({
+            ...data,
+            query_key: `${mode}:${region.lat}:${region.lon}:${radius}`,
+          });
+      })
       .catch((e) => {
         if (e.name !== "AbortError") setRadarError(e.message);
       });
@@ -110,6 +122,39 @@ export default function App() {
     mode === "live" && snapshot?.received_at
       ? Math.max(0, (tick - Date.parse(snapshot.received_at)) / 1000)
       : null;
+  const locateAircraft = useCallback((a: Aircraft) => {
+    setFocusError("");
+    setPendingFocus(a.icao24.toLowerCase());
+    setMode("live");
+    setRegion({
+      iata: "CUSTOM",
+      name: `Aircraft ${a.callsign ?? a.icao24}`,
+      lat: a.lat,
+      lon: a.lon,
+      tz: "UTC",
+    });
+  }, []);
+  useEffect(() => {
+    if (pendingFocus && mode !== "live") {
+      setPendingFocus(undefined);
+      return;
+    }
+    if (
+      !pendingFocus ||
+      !snapshot ||
+      snapshot.query_key !== `${mode}:${region.lat}:${region.lon}:${radius}`
+    )
+      return;
+    const found = snapshot.aircraft.find(
+      (a) => a.icao24.toLowerCase() === pendingFocus,
+    );
+    if (found) setSelected(found);
+    else
+      setFocusError(
+        "Coverage moved to the lookup position, but this aircraft was not returned in the new snapshot. It may have moved or the provider is unavailable.",
+      );
+    setPendingFocus(undefined);
+  }, [pendingFocus, snapshot, mode, region.lat, region.lon, radius]);
   const title = nav.find((n) => n[0] === location.pathname)?.[1] ?? "AeroTwin";
   const refreshNow = useCallback(() => setReload((v) => v + 1), []);
   const props = {
@@ -131,6 +176,8 @@ export default function App() {
     setPaused,
     age,
     refreshNow,
+    locateAircraft,
+    focusError,
   };
   return (
     <div
@@ -173,7 +220,7 @@ export default function App() {
             </div>
           </div>
           <div className="version">
-            AEROTWIN / v0.3.0 <span>RESEARCH</span>
+            AEROTWIN / v0.4.0 <span>RESEARCH</span>
           </div>
         </div>
       </aside>
@@ -283,6 +330,10 @@ export default function App() {
                 element={<Historical dataset={dataset} setMode={setMode} />}
               />
               <Route path="/forecast" element={<Forecast />} />
+              <Route
+                path="/analytics"
+                element={<Analytics key={dataset} dataset={dataset} />}
+              />
               <Route
                 path="/network"
                 element={<Simulator dataset={dataset} />}
