@@ -527,6 +527,12 @@ test("units convert instantly, preserve selection and filters, and persist acros
     .getByRole("button", { name: "Display units", exact: true })
     .click();
   await expect(page.getByLabel("Display unit settings")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Close units settings", exact: true })
+    .hover({ position: { x: 2, y: 2 } });
+  await expect(
+    page.getByRole("button", { name: "Close units settings", exact: true }),
+  ).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

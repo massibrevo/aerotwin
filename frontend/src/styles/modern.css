@@ -1336,3 +1336,14 @@ footer {
     gap: 4px;
   }
 }
+.units-backdrop,
+.units-backdrop:hover,
+.units-backdrop:active {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+  padding: 0;
+  min-height: 0;
+}
