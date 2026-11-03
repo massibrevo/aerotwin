@@ -27,6 +27,10 @@ if (process.env.AEROTWIN_LOCALE_CAPTURE) {
     await expect(
       page.getByText("OSSERVAZIONE AEROMOBILE", { exact: true }),
     ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Usa mappa offline", exact: true })
+      .click();
+    await expect(page.locator(".svg-aircraft")).toHaveCount(42);
     await page.screenshot({
       path: "../docs/screenshots/radar-it-v0.6.png",
       fullPage: true,
