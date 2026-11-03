@@ -6,10 +6,10 @@ The redesign was implemented and executed locally against the compiled single-se
 | --- | --- |
 | Backend pytest | **50 passed**, including optional observed registration/type parsing without route inference |
 | Python Ruff | **All checks passed** |
-| Frontend Vitest | **10 passed**, including coverage units, Mercator bounds, label collision priority, observed-trail deduplication/reset/rewind |
+| Frontend Vitest | **13 passed**, including unit factors, inverse model inputs, persisted preference validation, coverage units, Mercator bounds, label collision priority, observed-trail deduplication/reset/rewind |
 | TypeScript / Vite production build | **PASS**; large MapLibre vendor chunk warning remains |
 | Production endpoint verification | **10/10 passed**, health, readiness, demo radar/history, actual model inference, paired simulation and offline assets |
-| Core Playwright browser flows | **13 passed**, original workflows plus themes/command menu, filters/follow/selection retention/expanded view and phone width connecting-state semantics and real-photo credit/failure/synthetic isolation |
+| Core Playwright browser flows | **14 passed**, original workflows plus themes/command menu, filters/follow/selection retention/expanded view and phone width connecting-state semantics and real-photo credit/failure/synthetic isolation and instant units/persistence/model-input conversion/mobile controls |
 | Visual QA | **2 passed**, real OpenFreeMap street tiles plus synthetic aircraft, overview, light/dark forecast screenshots; separate from deterministic CI |
 
 Current npm versions were checked through the official registry before installation: Motion14.9.0, Radix Tooltip1.4.1, cmdk1.1.1, Lucide1.67.0, Recharts3.10.1. The npm lockfile preserves exact versions. Recharts was migrated from v2; API, model and simulator tests remain.

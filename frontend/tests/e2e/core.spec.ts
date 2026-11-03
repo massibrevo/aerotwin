@@ -434,3 +434,102 @@ test("real aircraft photo has source credit and handles an image failure", async
     page.getByText("Aircraft photo unavailable", { exact: true }),
   ).toBeVisible();
 });
+
+test("units convert instantly, preserve selection and filters, and persist across pages", async ({
+  page,
+}) => {
+  await page.goto("/radar");
+  await page
+    .getByRole("button", { name: "Use offline map", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Select SYN101", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Follow aircraft", exact: true })
+    .click();
+  const inspector = page.getByLabel("Aircraft inspector");
+  await expect(inspector.locator(".flight-metrics")).toContainText("2,000");
+  await page
+    .getByRole("button", { name: "Display units", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Metric units", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Close display units", exact: true })
+    .click();
+  await expect(inspector).toContainText("SYN101");
+  await expect(inspector.locator(".flight-metrics")).toContainText("610");
+  await expect(inspector.locator(".flight-metrics")).toContainText("333");
+  await expect(inspector.locator(".flight-metrics")).toContainText("km/h");
+  await expect(
+    page.getByRole("button", { name: "Following", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".location-radius")).toContainText("185");
+  await page.getByRole("button", { name: "All aircraft", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Aircraft filters", exact: true })
+    .click();
+  const min = page.getByLabel("Minimum altitude", { exact: true });
+  await min.press("ArrowRight");
+  await expect(min).toHaveAttribute("aria-valuetext", "305 m");
+  const filteredCount = await page.locator(".aircraft-row").count();
+  await page
+    .getByRole("button", { name: "Display units", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Aviation units", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Close display units", exact: true })
+    .click();
+  await expect(min).toHaveAttribute("aria-valuetext", "1,000 ft");
+  await expect(page.locator(".aircraft-row")).toHaveCount(filteredCount);
+  await page
+    .getByRole("button", { name: "Display units", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Metric units", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Close display units", exact: true })
+    .click();
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Display units", exact: true })
+    .click();
+  await expect(page.getByLabel("altitude units", { exact: true })).toHaveValue(
+    "m",
+  );
+  await expect(page.getByLabel("speed units", { exact: true })).toHaveValue(
+    "km/h",
+  );
+  await page
+    .getByRole("button", { name: "Close display units", exact: true })
+    .click();
+  await page.getByRole("link", { name: "Control tower", exact: true }).click();
+  await expect(page.locator(".profile-row")).toContainText([
+    "Above 9,144 m",
+    "Below 3,048 m",
+  ]);
+  await page.getByRole("link", { name: "Forecast lab", exact: true }).click();
+  await expect(page.getByText("Distance / km", { exact: true })).toBeVisible();
+  await page.getByLabel("Forecast distance", { exact: true }).fill("160.9344");
+  const predictionRequest = page.waitForRequest(
+    (r) => r.url().includes("/api/v1/predict") && r.method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Predict departure delay", exact: true })
+    .click();
+  expect((await predictionRequest).postDataJSON().distance).toBeCloseTo(100, 8);
+  await expect(page.getByLabel("Prediction result")).toContainText(
+    "Nominal 90%",
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page
+    .getByRole("button", { name: "Display units", exact: true })
+    .click();
+  await expect(page.getByLabel("Display unit settings")).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});

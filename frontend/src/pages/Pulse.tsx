@@ -1,8 +1,10 @@
+import { useUnits } from "../units";
 import { useEffect, useState } from "react";
 import { useApi } from "../api";
 import type { RadarProps, DatasetInfo } from "../types";
 import { Badge, State, Stat, Panel, Chart, num } from "../components/UI";
 export default function Pulse(p: RadarProps & { dataset: string }) {
+  const u = useUnits();
   const info = useApi<DatasetInfo>("/data/datasets/" + p.dataset);
   const [iata, setIata] = useState("ATL");
   useEffect(() => {
@@ -16,7 +18,7 @@ export default function Pulse(p: RadarProps & { dataset: string }) {
   }>(`/airports/${iata}/pulse?dataset=${p.dataset}`);
   const ac = p.snapshot?.aircraft ?? [];
   const bins = [0, 10000, 20000, 30000, 40000].map((n) => ({
-    band: `${n / 1000}–${n / 1000 + 10}k`,
+    band: `${u.number(n, "altitude")}–${u.format(n + 10000, "altitude")}`,
     aircraft: ac.filter(
       (a) =>
         a.altitude_ft !== null &&
@@ -55,12 +57,12 @@ export default function Pulse(p: RadarProps & { dataset: string }) {
         <Stat
           label="CLIMBING POSITIONS"
           value={ac.filter((a) => (a.vertical_rate_fpm ?? 0) > 300).length}
-          note="Proxy: vertical rate >300 ft/min"
+          note={`Proxy: vertical rate >${u.format(300, "vertical")}`}
         />
         <Stat
           label="DESCENDING POSITIONS"
           value={ac.filter((a) => (a.vertical_rate_fpm ?? 0) < -300).length}
-          note="Proxy: vertical rate <−300 ft/min"
+          note={`Proxy: vertical rate <${u.format(-300, "vertical")}`}
         />
       </div>
       <div className="two-col">

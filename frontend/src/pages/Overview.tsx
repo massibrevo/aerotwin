@@ -1,3 +1,4 @@
+import { useUnits } from "../units";
 import { Link } from "react-router-dom";
 import { Activity, ArrowRight, ShieldCheck } from "lucide-react";
 import RadarMap from "../RadarMap";
@@ -6,6 +7,7 @@ import { Badge, State, Stat, Panel, Chart, num } from "../components/UI";
 export default function Overview(
   p: RadarProps & { summary?: Summary; error: string },
 ) {
+  const u = useUnits();
   const high =
     p.snapshot?.aircraft.filter((a) => (a.altitude_ft ?? 0) > 30000).length ??
     0;
@@ -55,7 +57,7 @@ export default function Overview(
           <div className="subheading">
             <span>
               {p.region.name} / {p.region.iata}{" "}
-              <small>{p.radius} NM RADIUS</small>
+              <small>{u.format(p.radius, "distance")} RADIUS</small>
             </span>
             <Badge tone="amber">{p.snapshot?.source ?? "LOADING"}</Badge>
           </div>
@@ -71,8 +73,11 @@ export default function Overview(
           )}
           {p.selected && (
             <div className="selection-strip">
-              {p.selected.callsign} · {num(p.selected.altitude_ft)} ft ·{" "}
-              {num(p.selected.ground_speed_kt)} kt{" "}
+              {p.selected.callsign} ·{" "}
+              {p.selected.ground
+                ? "Ground"
+                : u.format(p.selected.altitude_ft, "altitude")}{" "}
+              · {u.format(p.selected.ground_speed_kt, "speed")}{" "}
               <Link to="/radar">Inspect aircraft →</Link>
             </div>
           )}
@@ -84,7 +89,7 @@ export default function Overview(
               <span>aircraft in selected snapshot</span>
             </div>
             <div className="profile-row">
-              <span>Above FL300</span>
+              <span>Above {u.format(30000, "altitude")}</span>
               <strong>{high}</strong>
             </div>
             <div className="meter">
@@ -95,7 +100,7 @@ export default function Overview(
               />
             </div>
             <div className="profile-row">
-              <span>Below 10,000 ft</span>
+              <span>Below {u.format(10000, "altitude")}</span>
               <strong>{low}</strong>
             </div>
             <div className="meter amber-meter">

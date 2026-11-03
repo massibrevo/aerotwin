@@ -1,3 +1,4 @@
+import { UnitsControl } from "../units";
 import { useEffect, useState, type ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
 import { Command } from "cmdk";
@@ -135,6 +136,7 @@ export function WorkspaceTools({
         <span>Search workspace…</span>
         <kbd>⌘ K</kbd>
       </button>
+      <UnitsControl />
       <button
         className="theme-toggle"
         onClick={onTheme}

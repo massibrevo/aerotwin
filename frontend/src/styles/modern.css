@@ -1214,3 +1214,125 @@ footer {
   background: #e4b76b;
   box-shadow: 0 0 0 5px #e4b76b14;
 }
+
+.units-control {
+  position: relative;
+}
+.units-toggle {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.units-toggle span {
+  color: var(--text-muted);
+  margin-left: 5px;
+  font-size: 10px;
+}
+.units-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: transparent;
+  border: 0;
+}
+.units-panel {
+  position: absolute;
+  z-index: 200;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(290px, calc(100vw - 24px));
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 16px 50px #0f213333;
+  color: var(--text);
+}
+.units-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.units-heading button {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  font-size: 22px;
+}
+.units-presets {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.units-presets button {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 8px 4px;
+  font-size: 11px;
+}
+.units-panel label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 0;
+  font-size: 12px;
+}
+.units-panel select {
+  width: 110px;
+  padding: 7px;
+}
+.units-panel p {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 12px 0 0;
+}
+@media (max-width: 700px) {
+  .units-toggle {
+    padding: 7px;
+  }
+  .units-toggle span {
+    display: none;
+  }
+  .units-panel {
+    position: fixed;
+    top: 70px;
+    right: 12px;
+  }
+  .topbar-right {
+    gap: 6px;
+  }
+}
+.units-panel label {
+  flex-direction: row;
+}
+@media (max-width: 700px) {
+  .topbar {
+    gap: 8px;
+  }
+  .topbar .breadcrumb {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0;
+  }
+  .topbar .breadcrumb > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+  }
+  .topbar-right {
+    flex-shrink: 0;
+    gap: 4px;
+  }
+}

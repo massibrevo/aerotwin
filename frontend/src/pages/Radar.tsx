@@ -1,3 +1,4 @@
+import { useUnits } from "../units";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -31,6 +32,7 @@ import { Badge, num } from "../components/UI";
 import { useObservedTrail } from "../features/radar/useObservedTrail";
 
 export default function Radar(p: RadarProps) {
+  const u = useUnits();
   const [search, setSearch] = useState("");
   const [minAlt, setMinAlt] = useState(0);
   const [maxAlt, setMaxAlt] = useState(45000);
@@ -163,8 +165,8 @@ export default function Radar(p: RadarProps) {
             </select>
           </label>
           <span className="location-radius">
-            {p.radius}
-            <small>NM</small>
+            {u.number(p.radius, "distance")}
+            <small>{u.label("distance")}</small>
           </span>
           <button
             aria-label="Custom region"
@@ -239,7 +241,7 @@ export default function Radar(p: RadarProps) {
                 customRadius > 250
               ) {
                 setFormError(
-                  "Street maps support latitude ±85°, longitude ±180°, radius 1–250 NM.",
+                  `Street maps support latitude ±85°, longitude ±180°, radius ${u.number(1, "distance", 3)}–${u.format(250, "distance", 3)}.`,
                 );
                 return;
               }
@@ -287,14 +289,17 @@ export default function Radar(p: RadarProps) {
                 />
               </label>
               <label>
-                Radius / NM
+                Radius / {u.label("distance")}
                 <input
                   aria-label="Custom radius"
                   type="number"
-                  min="1"
-                  max="250"
-                  value={customRadius}
-                  onChange={(e) => setCustomRadius(+e.target.value)}
+                  min={u.convert(1, "distance")}
+                  max={u.convert(250, "distance")}
+                  step="any"
+                  value={+u.convert(customRadius, "distance").toFixed(6)}
+                  onChange={(e) =>
+                    setCustomRadius(u.fromDisplay(+e.target.value, "distance"))
+                  }
                 />
               </label>
             </div>
@@ -373,15 +378,17 @@ export default function Radar(p: RadarProps) {
                   <div>
                     <span>ALTITUDE</span>
                     <strong>
-                      {picked.ground ? "Ground" : num(picked.altitude_ft)}
-                      <small>{picked.ground ? "" : "ft"}</small>
+                      {picked.ground
+                        ? "Ground"
+                        : u.number(picked.altitude_ft, "altitude")}
+                      <small>{picked.ground ? "" : u.label("altitude")}</small>
                     </strong>
                   </div>
                   <div>
                     <span>GROUND SPEED</span>
                     <strong>
-                      {num(picked.ground_speed_kt)}
-                      <small>kt</small>
+                      {u.number(picked.ground_speed_kt, "speed")}
+                      <small>{u.label("speed")}</small>
                     </strong>
                   </div>
                   <div>
@@ -409,7 +416,7 @@ export default function Radar(p: RadarProps) {
                           ? "Descending"
                           : "Level / low vertical rate"}
                   </span>
-                  <b>{num(picked.vertical_rate_fpm)} ft/min</b>
+                  <b>{u.format(picked.vertical_rate_fpm, "vertical")}</b>
                 </div>
                 <div className="flight-card-actions">
                   <button
@@ -516,7 +523,7 @@ export default function Radar(p: RadarProps) {
                         set: setMinAlt,
                         max: 45000,
                         step: 1000,
-                        unit: "ft",
+                        kind: "altitude" as const,
                       },
                       {
                         label: "Maximum altitude",
@@ -525,7 +532,7 @@ export default function Radar(p: RadarProps) {
                         set: setMaxAlt,
                         max: 45000,
                         step: 1000,
-                        unit: "ft",
+                        kind: "altitude" as const,
                       },
                       {
                         label: "Minimum speed",
@@ -534,16 +541,15 @@ export default function Radar(p: RadarProps) {
                         set: setMinSpeed,
                         max: 600,
                         step: 20,
-                        unit: "kt",
+                        kind: "speed" as const,
                       },
                     ].map((c) => (
                       <label className="range-label" key={c.label}>
                         {c.name}
-                        <strong>
-                          {num(c.value)} {c.unit}
-                        </strong>
+                        <strong>{u.format(c.value, c.kind)}</strong>
                         <input
                           aria-label={c.label}
+                          aria-valuetext={u.format(c.value, c.kind)}
                           type="range"
                           min="0"
                           max={c.max}
@@ -588,13 +594,16 @@ export default function Radar(p: RadarProps) {
                       </span>
                       <span>
                         <strong>
-                          {a.ground ? "Ground" : num(a.altitude_ft)}
+                          {a.ground
+                            ? "Ground"
+                            : u.number(a.altitude_ft, "altitude")}
                           <small className="inline-unit">
-                            {a.ground ? "" : " ft"}
+                            {a.ground ? "" : ` ${u.label("altitude")}`}
                           </small>
                         </strong>
                         <small>
-                          {num(a.ground_speed_kt)} kt <ChevronRight size={11} />
+                          {u.format(a.ground_speed_kt, "speed")}{" "}
+                          <ChevronRight size={11} />
                         </small>
                       </span>
                     </button>

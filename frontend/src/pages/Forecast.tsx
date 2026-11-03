@@ -1,3 +1,4 @@
+import { useUnits } from "../units";
 import { useEffect, useState } from "react";
 import { FlaskConical } from "lucide-react";
 import {
@@ -13,6 +14,7 @@ import { useApi, post } from "../api";
 import type { Model, Prediction } from "../types";
 import { Badge, State, Panel, Chart, num } from "../components/UI";
 export default function Forecast() {
+  const u = useUnits();
   const r = useApi<Model[]>("/models");
   const [modelId, setModelId] = useState("synthetic");
   const model = r.data?.find((m) => m.model_id === modelId);
@@ -137,19 +139,43 @@ export default function Forecast() {
                       hour: "Local departure hour",
                       month: "Month",
                       dow: "Weekday (Mon = 0)",
-                      distance: "Distance / miles",
+                      distance: `Distance / ${u.label("routeDistance")}`,
                     }[k]
                   }
                   <input
                     aria-label={`Forecast ${k}`}
                     type="number"
                     required
-                    min={k === "distance" || k === "month" ? 1 : 0}
-                    max={{ hour: 23, month: 12, dow: 6, distance: 12000 }[k]}
-                    value={values[k]}
+                    min={
+                      k === "distance"
+                        ? u.convert(1, "routeDistance")
+                        : k === "month"
+                          ? 1
+                          : 0
+                    }
+                    step={k === "distance" ? "any" : 1}
+                    max={
+                      {
+                        hour: 23,
+                        month: 12,
+                        dow: 6,
+                        distance: u.convert(12000, "routeDistance"),
+                      }[k]
+                    }
+                    value={
+                      k === "distance"
+                        ? +u.convert(values[k], "routeDistance").toFixed(6)
+                        : values[k]
+                    }
                     onChange={(e) => {
                       setResult(undefined);
-                      setValues({ ...values, [k]: +e.target.value });
+                      setValues({
+                        ...values,
+                        [k]:
+                          k === "distance"
+                            ? u.fromDisplay(+e.target.value, "routeDistance")
+                            : +e.target.value,
+                      });
                     }}
                   />
                 </label>

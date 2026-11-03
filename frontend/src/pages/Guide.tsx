@@ -22,11 +22,22 @@ export default function Guide() {
         <div className="guide-step">
           <h3>2. Attiva osservazioni reali</h3>
           <p>
-            Scegli <b>Live ADS-B</b>, una regione e il raggio in miglia nautiche
-            (1 NM = 1,852 km). Servono Internet e disponibilità del provider.
-            Una risposta vuota non dimostra assenza di traffico.{" "}
-            <b>LIVE UNAVAILABLE</b> significa che il feed non è disponibile; la
-            demo si attiva solo con una scelta esplicita.
+            Scegli <b>Live ADS-B</b>, una regione e il raggio (1 NM = 1,852 km).
+            Servono Internet e disponibilità del provider. Una risposta vuota
+            non dimostra assenza di traffico. <b>LIVE UNAVAILABLE</b> significa
+            che il feed non è disponibile; la demo si attiva solo con una scelta
+            esplicita.
+          </p>
+        </div>
+        <div className="guide-step">
+          <h3>Unità in tempo reale</h3>
+          <p>
+            Apri <b>Units</b> nella barra superiore: scegli <b>Metric units</b>{" "}
+            oppure cambia quota (ft/m), velocità (kt/km/h/mph), distanza
+            (NM/km/mi) e velocità verticale (ft/min o m/s). Le schede, le mappe,
+            i filtri e le distanze del modello si aggiornano subito; la
+            selezione rimane salvata su questo browser. I dati originali e i CSV
+            mantengono le unità della fonte.
           </p>
         </div>
         <div className="guide-step">

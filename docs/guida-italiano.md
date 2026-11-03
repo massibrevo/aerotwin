@@ -138,3 +138,9 @@ Per formule e dettagli consulta `methodology.md`, `model-card.md`, `datasets-and
 Nella scheda di un aereo LIVE viene cercata una foto di riferimento tramite il suo codice ICAO hex su Planespotters.net. La miniatura mostra il credito del fotografo ed è cliccabile per aprire la pagina originale. Non è una foto in diretta: livrea e assegnazione del codice possono cambiare. Se non esiste una corrispondenza o il servizio non risponde, compare “Aircraft photo unavailable”. Demo e replay sintetici non ricevono foto di aerei reali.
 
 Serve Internet. Il servizio riceve il codice pubblico ICAO dell’aereo selezionato e il browser carica la miniatura dal CDN, che riceve il suo indirizzo IP. Nessun file fotografico viene salvato o distribuito con AeroTwin; solo i metadati rimangono in memoria per un’ora. Il copyright resta al fotografo.
+
+### Conversione delle unità
+
+Apri **Units** nella barra superiore. **Metric units** cambia subito quota in metri, velocità in km/h, distanze in km e velocità verticale in m/s. **Aviation units** ripristina ft, kt, NM e ft/min. Puoi scegliere le quattro unità separatamente, incluse mph e miglia terrestri. La scelta è salvata nel browser e vale per schede, lista, mappe, raggio, filtri, grafici delle quote e input della distanza in Forecast lab. La selezione dell’aereo e i filtri rimangono attivi.
+
+Il raggio personalizzato e la distanza del modello accettano la nuova unità e vengono convertiti prima della richiesta. I dati originali, API e CSV mantengono le unità della fonte; i valori mancanti restano mancanti. I numeri mostrati sono arrotondati, senza modificare la precisione conservata nei dati.

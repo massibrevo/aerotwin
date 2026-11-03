@@ -1,3 +1,4 @@
+import { useUnits } from "./units";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { geoMercator, geoPath, geoGraticule10 } from "d3-geo";
 import type { FeatureCollection } from "geojson";
@@ -47,6 +48,7 @@ function RadarMap({
   coverage = true,
   recenter = 0,
 }: Props) {
+  const u = useUnits();
   const [world, setWorld] = useState<FeatureCollection>();
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState([0, 0]);
@@ -303,7 +305,7 @@ function RadarMap({
         `Select ${a.callsign ?? a.icao24}`,
       );
       item.button.setAttribute("aria-pressed", String(a.icao24 === selected));
-      item.button.title = `${a.callsign ?? a.icao24} · ${a.altitude_ft == null ? "Unknown altitude" : a.altitude_ft.toLocaleString() + " ft"} · ${a.ground_speed_kt ?? "—"} kt`;
+      item.button.title = `${a.callsign ?? a.icao24} · ${a.altitude_ft == null ? "Unknown altitude" : u.format(a.altitude_ft, "altitude")} · ${u.format(a.ground_speed_kt, "speed")}`;
       const label = item.button.querySelector(".aircraft-label")!;
       label.textContent = a.callsign ?? a.icao24.toUpperCase();
       (
@@ -326,7 +328,7 @@ function RadarMap({
     return () => {
       m.off("moveend", placeLabels);
     };
-  }, [aircraft, selected, labels, loaded]);
+  }, [aircraft, selected, labels, loaded, u]);
   useEffect(() => {
     const m = map.current;
     if (!m || !loaded) return;
@@ -519,7 +521,8 @@ function RadarMap({
                   </text>
                 )}
                 <title>
-                  {a.callsign} · {a.altitude_ft ?? "Unknown"} ft
+                  {a.callsign} ·{" "}
+                  {a.ground ? "Ground" : u.format(a.altitude_ft, "altitude")}
                 </title>
               </g>
             );
