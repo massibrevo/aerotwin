@@ -1862,3 +1862,82 @@
     min-height: 340px;
   }
 }
+
+.map-loading {
+  position: absolute;
+  left: 58%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #d0dce7;
+  border-radius: 10px;
+  background: #fffffff0;
+  color: #506e83;
+  padding: 13px 16px;
+  font-size: 12px;
+  box-shadow: 0 6px 24px #17324a12;
+  pointer-events: none;
+  z-index: 4;
+  white-space: nowrap;
+}
+.map-loading > span {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #d6e3ee;
+  border-top-color: #437fd2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.aircraft-photo {
+  background: var(--bg-subtle, #f3f6fb);
+}
+.aircraft-photo > a:first-child {
+  display: block;
+}
+.aircraft-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  object-fit: contain;
+  background: #17243b;
+}
+.aircraft-photo .photo-credit {
+  display: block;
+  padding: 8px 16px 3px;
+  color: var(--text);
+  font-size: 11px;
+  text-decoration: none;
+}
+.photo-context {
+  display: block;
+  padding: 0 16px 8px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.photo-identity {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.photo-placeholder {
+  min-height: 95px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .aircraft-photo img {
+    max-height: 150px;
+  }
+}

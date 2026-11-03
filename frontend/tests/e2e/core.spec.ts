@@ -310,3 +310,127 @@ test("radar filters, follow, display controls and narrow layout work", async ({
     ),
   ).toBe(true);
 });
+
+test("switching to live clears demo aircraft and shows a connecting state", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>((r) => {
+    release = r;
+  });
+  await page.route("**/api/v1/aircraft?**", async (route) => {
+    if (new URL(route.request().url()).searchParams.get("mode") !== "live")
+      return route.continue();
+    await gate;
+    await route.fulfill({
+      json: {
+        mode: "live",
+        status: "unavailable",
+        source: "ADSB.lol",
+        aircraft: [],
+        received_at: null,
+        error: "Test live outage",
+        retry_after_seconds: 60,
+        attribution: "ADSB.lol",
+      },
+    });
+  });
+  await page.goto("/radar");
+  await page
+    .getByRole("button", { name: "Use offline map", exact: true })
+    .click();
+  await expect(page.locator(".aircraft")).toHaveCount(42);
+  try {
+    await page.getByRole("button", { name: "Live ADS-B", exact: true }).click();
+    await expect(page.locator(".topbar")).toContainText("CONNECTING");
+    await expect(page.locator(".aircraft")).toHaveCount(0);
+  } finally {
+    release();
+  }
+  await expect(page.locator(".topbar")).toContainText("LIVE UNAVAILABLE");
+});
+
+test("real aircraft photo has source credit and handles an image failure", async ({
+  page,
+}) => {
+  let lookups = 0;
+  await page.route("**/api/v1/aircraft/*/photo", async (route) => {
+    lookups++;
+    await route.fulfill({
+      json: {
+        status: "available",
+        photo: {
+          src: "https://t.plnspttrs.net/test.jpg",
+          link: "https://www.planespotters.net/photo/1/test",
+          photographer: "Test Photographer",
+          matched_icao24: "0200ea",
+        },
+      },
+    });
+  });
+  await page.route("https://t.plnspttrs.net/test.jpg", (route) =>
+    route.fulfill({
+      contentType: "image/png",
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    }),
+  );
+  await page.route("**/api/v1/aircraft?**", async (route) => {
+    if (new URL(route.request().url()).searchParams.get("mode") !== "live")
+      return route.continue();
+    await route.fulfill({
+      json: {
+        mode: "live",
+        status: "ok",
+        source: "ADSB.lol",
+        attribution: "ADSB.lol",
+        received_at: new Date().toISOString(),
+        aircraft: [
+          {
+            icao24: "0200ea",
+            callsign: "RAM964Y",
+            registration: "CN-RGG",
+            aircraft_type: "B738",
+            lat: 41.3,
+            lon: 2.1,
+            altitude_ft: 12000,
+            ground_speed_kt: 250,
+            track_deg: 90,
+            vertical_rate_fpm: 0,
+            ground: false,
+            observed_at_utc: new Date().toISOString(),
+            received_at_utc: new Date().toISOString(),
+            provider: "ADSB.lol",
+            data_age_seconds: 0,
+          },
+        ],
+      },
+    });
+  });
+  await page.goto("/radar");
+  await page
+    .getByRole("button", { name: "Use offline map", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Select SYN101", exact: true })
+    .click();
+  await expect(
+    page.getByText("No real photo for synthetic / replay aircraft"),
+  ).toBeVisible();
+  expect(lookups).toBe(0);
+  await page.getByRole("button", { name: "Live ADS-B", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Select RAM964Y", exact: true })
+    .click();
+  const image = page.getByRole("img", { name: "Aircraft CN-RGG", exact: true });
+  await expect(image).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Test Photographer/ }),
+  ).toHaveAttribute("href", "https://www.planespotters.net/photo/1/test");
+  await image.evaluate((img) => img.dispatchEvent(new Event("error")));
+  await expect(
+    page.getByText("Aircraft photo unavailable", { exact: true }),
+  ).toBeVisible();
+});

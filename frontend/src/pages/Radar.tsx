@@ -23,6 +23,7 @@ import {
   Eye,
   Radio,
 } from "lucide-react";
+import AircraftPhoto from "../features/radar/AircraftPhoto";
 import RadarMap from "../RadarMap";
 import { presets } from "../presets";
 import type { RadarProps, Mode } from "../types";
@@ -99,13 +100,16 @@ export default function Radar(p: RadarProps) {
     setMinSpeed(0);
     setSearch("");
   };
+  const waiting = !p.snapshot && !p.radarError;
   const status =
     p.mode === "live"
-      ? p.snapshot?.status === "live"
-        ? p.age !== null && p.age > 60
-          ? "Stale observations"
-          : "Live observations"
-        : "Feed unavailable"
+      ? waiting
+        ? "Connecting to ADS-B"
+        : p.snapshot?.status === "live"
+          ? p.age !== null && p.age > 60
+            ? "Stale observations"
+            : "Live observations"
+          : "Feed unavailable"
       : p.mode === "replay"
         ? "Synthetic recording"
         : "Synthetic aircraft";
@@ -360,21 +364,11 @@ export default function Radar(p: RadarProps) {
                     <Plane size={27} />
                   </span>
                 </div>
-                <div className="flight-airframe" aria-hidden="true">
-                  <svg viewBox="0 0 300 90">
-                    <path d="M20 60 55 57 90 25 103 25 92 55 213 48 231 30 240 30 238 49 265 54 279 60 264 65 232 66 224 78 216 78 216 66 91 67 106 86 94 86 65 66 26 66Z" />
-                    <path
-                      d="M45 43H160M167 43H186M209 18H260"
-                      className="airframe-lines"
-                    />
-                  </svg>
-                  <span>
-                    {picked.aircraft_type ?? "Type not provided"}
-                    <small>
-                      {picked.registration ?? "Registration not provided"}
-                    </small>
-                  </span>
-                </div>
+                <AircraftPhoto
+                  key={`${p.mode}:${picked.icao24}`}
+                  aircraft={picked}
+                  live={p.mode === "live"}
+                />
                 <div className="flight-metrics">
                   <div>
                     <span>ALTITUDE</span>
@@ -608,7 +602,11 @@ export default function Radar(p: RadarProps) {
                   {!rows.length && (
                     <div className="traffic-empty">
                       <Search size={24} />
-                      <h3>No aircraft to display</h3>
+                      <h3>
+                        {waiting
+                          ? "Loading observations…"
+                          : "No aircraft to display"}
+                      </h3>
                       <p>
                         {p.snapshot?.status === "unavailable"
                           ? "The live provider is unavailable. Choose demo explicitly to explore offline."

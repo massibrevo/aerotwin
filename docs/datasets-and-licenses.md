@@ -15,3 +15,8 @@ ADSB.lol positions are community observations and may be sparse, stale or incomp
 The committed provider fixture is a minimal artificial response matching the actual verified ADSB.lol schema, with deliberate invalid records. Local live integration was also checked; raw observed payloads remain outside this repository. Tests do not require live network.
 
 BTS raw files, processed imports and trained artifacts stay out of Git. Imports save input SHA-256, import UTC, coverage, timezone mappings, duplicate/null/cancelled/diverted counts. No automatic large download or invented BTS endpoint is implemented. Optional weather is absent; historical reanalysis must never masquerade as issue-time forecast weather. Provider terms can change: verify them before redistribution or hosted use.
+
+
+## Aircraft reference photographs
+
+Optional live-card thumbnails come from the [Planespotters.net Photo API](https://www.planespotters.net/photo/api). Copyright remains with each photographer; they are not MIT/ODbL assets. The returned thumbnail links to the source photo page with visible photographer credit. No photos are bundled or persisted by AeroTwin. Metadata is cached in memory for one hour. Synthetic/replay modes do not request photographs. Provider availability, matching accuracy and current livery are not guaranteed. See `radar-ui-v0.3.md` for network and caching behaviour.

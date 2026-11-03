@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { NavLink, Link, Route, Routes, useLocation } from "react-router-dom";
 import {
   Activity,
@@ -72,7 +72,7 @@ export default function App() {
   const [tick, setTick] = useState(Date.now());
   const summary = useApi<Summary>("/historical/summary?dataset=" + dataset);
   const location = useLocation();
-  useEffect(() => {
+  useLayoutEffect(() => {
     setSnapshot(undefined);
     setSelected(undefined);
   }, [mode, region, radius]);
@@ -200,7 +200,9 @@ export default function App() {
                   ? "REPLAY · SYNTHETIC"
                   : snapshot?.status === "live" && !radarError
                     ? "LIVE"
-                    : "LIVE UNAVAILABLE"}
+                    : snapshot || radarError
+                      ? "LIVE UNAVAILABLE"
+                      : "CONNECTING"}
             </Badge>
             <div className="avatar">AT</div>
           </div>

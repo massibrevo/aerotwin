@@ -131,3 +131,10 @@ Le snapshot e gli artefatti precedenti restano conservati: l'occupazione su disc
 - Nessuna validazione/certificazione per dispatch, ATC o decisioni di sicurezza. Una CI verde dimostra i controlli software eseguiti, non l'accuratezza operativa dei modelli.
 
 Per formule e dettagli consulta `methodology.md`, `model-card.md`, `datasets-and-licenses.md` e `evaluation-v0.3.md`.
+
+
+### Foto reali degli aeromobili
+
+Nella scheda di un aereo LIVE viene cercata una foto di riferimento tramite il suo codice ICAO hex su Planespotters.net. La miniatura mostra il credito del fotografo ed è cliccabile per aprire la pagina originale. Non è una foto in diretta: livrea e assegnazione del codice possono cambiare. Se non esiste una corrispondenza o il servizio non risponde, compare “Aircraft photo unavailable”. Demo e replay sintetici non ricevono foto di aerei reali.
+
+Serve Internet. Il servizio riceve il codice pubblico ICAO dell’aereo selezionato e il browser carica la miniatura dal CDN, che riceve il suo indirizzo IP. Nessun file fotografico viene salvato o distribuito con AeroTwin; solo i metadati rimangono in memoria per un’ora. Il copyright resta al fotografo.

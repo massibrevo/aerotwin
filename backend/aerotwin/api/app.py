@@ -12,6 +12,7 @@ from typing import Literal
 from aerotwin.config import AIRPORTS, DATA, VERSION
 from aerotwin.data.store import load, query, summary, ingest_bts, provenance, dataset_revision
 from aerotwin.ml.engine import predict, reports, validated_model
+from aerotwin.providers.photos import AircraftPhotos
 from aerotwin.providers.aircraft import AdsbLolProvider, RecordedReplayProvider, SyntheticProvider
 from aerotwin.simulation.engine import network, simulate
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -73,6 +74,14 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 live = AdsbLolProvider()
+photos = AircraftPhotos()
+
+
+@app.get("/api/v1/aircraft/{icao24}/photo")
+async def aircraft_photo(icao24: str):
+    return await photos.lookup(icao24)
+
+
 Dataset = Literal["synthetic", "bts"]
 Mode = Literal["demo", "live", "replay"]
 simulation_gate = asyncio.Semaphore(1)

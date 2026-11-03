@@ -526,6 +526,12 @@ function RadarMap({
           })}
         </svg>
       )}
+      {online && !loaded && (
+        <div className="map-loading" role="status">
+          <span />
+          Loading free street map…
+        </div>
+      )}
       <div className="map-toolbar">
         <button
           onClick={() => setMenu(!menu)}
