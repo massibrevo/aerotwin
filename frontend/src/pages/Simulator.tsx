@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GitBranch, SlidersHorizontal } from "lucide-react";
 import { useApi, post } from "../api";
 import type { Network, Simulation } from "../types";
@@ -14,6 +14,10 @@ export default function Simulator({ dataset }: { dataset: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const nodes = network.data?.nodes ?? [];
+  useEffect(() => {
+    if (nodes.length && !nodes.some((n) => n.iata === airport))
+      setAirport(nodes[0].iata);
+  }, [network.data, airport]);
   const coords = Object.fromEntries(
     nodes.map((n, i) => [
       n.iata,

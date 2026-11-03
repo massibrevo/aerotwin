@@ -3,22 +3,69 @@ import csv
 import io
 import json
 import uuid
-from collections import OrderedDict
+import tempfile
+from contextlib import asynccontextmanager
+from urllib.parse import urlparse
 from datetime import date
 from typing import Literal
 
-from aerotwin.config import AIRPORTS, DATA
-from aerotwin.data.store import load, query, summary
-from aerotwin.ml.engine import predict, reports
+from aerotwin.config import AIRPORTS, DATA, VERSION
+from aerotwin.data.store import load, query, summary, ingest_bts, provenance, dataset_revision
+from aerotwin.ml.engine import predict, reports, validated_model
 from aerotwin.providers.aircraft import AdsbLolProvider, RecordedReplayProvider, SyntheticProvider
 from aerotwin.simulation.engine import network, simulate
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from aerotwin import jobs
+from aerotwin.storage import record, recent, get as stored_experiment
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
-app = FastAPI(title="AeroTwin local research API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app):
+    jobs.recover_interrupted()
+    yield
+
+
+app = FastAPI(title="AeroTwin local research API", version=VERSION, lifespan=lifespan)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "[::1]"])
+
+
+@app.middleware("http")
+async def local_boundary(request: Request, call_next):
+    # Cross-origin sites must not mutate a user's local datasets or start CPU jobs.
+    if request.method not in ("GET", "HEAD", "OPTIONS"):
+        origin = request.headers.get("origin")
+        source = urlparse(origin) if origin else None
+        if (
+            request.headers.get("sec-fetch-site") == "cross-site"
+            or (
+                source
+                and (
+                    source.scheme not in ("http", "https")
+                    or source.hostname not in ("127.0.0.1", "localhost", "::1")
+                )
+            )
+            or origin == "null"
+        ):
+            return JSONResponse(
+                status_code=403, content={"error": "cross_origin_write", "detail": "Local requests only"}
+            )
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if getattr(request.app.state, "production", False) and request.url.path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:5174"],
@@ -28,7 +75,6 @@ app.add_middleware(
 live = AdsbLolProvider()
 Dataset = Literal["synthetic", "bts"]
 Mode = Literal["demo", "live", "replay"]
-simulations = OrderedDict()
 simulation_gate = asyncio.Semaphore(1)
 
 
@@ -37,9 +83,35 @@ async def value_error(request, exc):
     return JSONResponse(status_code=400, content={"error": "invalid_data", "detail": str(exc)})
 
 
+@app.exception_handler(Exception)
+async def internal_error(request, exc):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "internal_error",
+            "detail": "Local operation failed. Check server logs; no data was sent externally.",
+        },
+    )
+
+
 @app.get("/api/v1/health")
 def health():
-    return {"status": "ok", "version": "0.1.0", "local_only": True}
+    return {"status": "ok", "version": VERSION, "local_only": True}
+
+
+@app.get("/api/v1/ready")
+def ready():
+    checks = {"demo_data": (DATA / "demo/flights.csv").is_file()}
+    try:
+        validated_model("synthetic")
+        checks["demo_model"] = True
+    except (ValueError, OSError):
+        checks["demo_model"] = False
+    status = all(checks.values())
+    return JSONResponse(
+        status_code=200 if status else 503,
+        content={"status": "ready" if status else "setup_required", "checks": checks, "version": VERSION},
+    )
 
 
 @app.get("/api/v1/airports")
@@ -117,8 +189,8 @@ def history(
 @app.get("/api/v1/historical/export")
 def export(
     dataset: Dataset = "synthetic",
-    search: str = "",
-    origin: str = "",
+    search: str = Query("", max_length=80),
+    origin: str = Query("", max_length=3),
     start: date | None = None,
     end: date | None = None,
 ):
@@ -175,6 +247,7 @@ def metrics(model_id: str):
 
 
 class Prediction(BaseModel):
+    model_config = {"extra": "forbid"}
     model_id: Dataset = "synthetic"
     origin: str = Field(default="ATL", pattern="^[A-Z]{3}$")
     dest: str = Field(default="JFK", pattern="^[A-Z]{3}$")
@@ -191,15 +264,12 @@ def prediction(body: Prediction):
     values = body.model_dump(exclude={"model_id"})
     if values["origin"] == values["dest"]:
         raise ValueError("Origin and destination must differ")
-    training = load(model_id)
-    if not set([values["origin"], values["dest"]]) <= set(training.origin) | set(training.dest):
-        raise ValueError("Airport outside model training coverage")
     result = predict(model_id, values)
-    result["warnings"] = ["Schedule-only forecast; unseen routes/categories can be unreliable."]
     return result
 
 
 class Scenario(BaseModel):
+    model_config = {"extra": "forbid"}
     airport: str = Field(default="ATL", pattern="^[A-Z]{3}$")
     reduction: float = Field(default=0.4, ge=0, le=0.7, allow_inf_nan=False)
     duration: int = Field(default=120, ge=15, le=360)
@@ -213,22 +283,20 @@ async def scenario(body: Scenario):
     async with simulation_gate:
         result = await run_in_threadpool(simulate, **body.model_dump())
     result["id"] = uuid.uuid4().hex
-    if len(simulations) >= 50:
-        simulations.popitem(last=False)
-    simulations[result["id"]] = result
+    record("simulation", result, result["id"])
     return result
 
 
 @app.get("/api/v1/simulations/{simulation_id}")
 def simulation(simulation_id: str):
-    if simulation_id not in simulations:
-        raise HTTPException(404, "Simulation not found in this process session")
-    return simulations[simulation_id]
+    result = stored_experiment(simulation_id, "simulation")
+    if result is None:
+        raise HTTPException(404, "Simulation not found")
+    return result
 
 
 @app.get("/api/v1/data/sources")
 def sources():
-    provenance = DATA / "processed" / "bts" / "provenance.json"
     return {
         "sources": [
             {
@@ -248,7 +316,7 @@ def sources():
             },
             {
                 "name": "BTS On-Time Performance",
-                "class": "REAL, user import only",
+                "class": "USER IMPORT, source authenticity unverified",
                 "license": "US DOT source terms; verify extract rights",
                 "url": "https://www.transtats.bts.gov/",
             },
@@ -265,10 +333,84 @@ def sources():
                 "url": "https://openfreemap.org/tos/",
             },
         ],
-        "bts_import": json.loads(provenance.read_text()) if provenance.exists() else None,
-        "experiments": [
-            {k: r[k] for k in ["model_id", "trained_at", "selected_model", "n", "dataset_sha256"]}
-            for r in reports()
-        ],
-        "simulation_history": list(simulations.values())[-10:],
+        "bts_import": provenance(),
+        "experiments": recent("training", 20),
+        "simulation_history": [e["payload"] for e in recent("simulation", 10)],
+        "import_history": recent("import", 10),
+        "jobs": recent("job", 10),
+    }
+
+
+@app.get("/api/v1/experiments")
+def experiments(limit: int = Query(50, ge=1, le=100)):
+    return recent(limit=limit)
+
+
+@app.post("/api/v1/data/import-bts")
+async def import_bts(request: Request, timezone_map: str = Query("{}", max_length=20000)):
+    try:
+        zones = json.loads(timezone_map)
+    except json.JSONDecodeError as exc:
+        raise ValueError("Timezone mapping must be a JSON object") from exc
+    if not isinstance(zones, dict) or any(
+        not isinstance(k, str) or not isinstance(v, str) for k, v in zones.items()
+    ):
+        raise ValueError("Timezone mapping must map airport codes to IANA timezone strings")
+    if request.headers.get("content-type", "").split(";")[0] not in ("text/csv", "application/octet-stream"):
+        raise HTTPException(415, "Upload a CSV file as text/csv")
+    limit = 20 * 1024 * 1024
+    folder = DATA / "processed" / "uploads"
+    folder.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=folder, suffix=".csv", delete=False) as output:
+        path = __import__("pathlib").Path(output.name)
+        try:
+            size = 0
+            async for chunk in request.stream():
+                size += len(chunk)
+                if size > limit:
+                    raise HTTPException(
+                        413, "CSV exceeds the 20 MiB browser import limit; use the CLI for larger files"
+                    )
+                output.write(chunk)
+            output.close()
+            if not jobs._lock.acquire(blocking=False):
+                raise HTTPException(409, "A training or import job is already running")
+            try:
+                return await run_in_threadpool(ingest_bts, path, zones)
+            finally:
+                jobs._lock.release()
+        finally:
+            output.close()
+            path.unlink(missing_ok=True)
+
+
+class Training(BaseModel):
+    model_config = {"extra": "forbid"}
+    dataset: Dataset = "synthetic"
+
+
+@app.post("/api/v1/models/train", status_code=202)
+def train_model(body: Training):
+    return jobs.start_training(body.dataset)
+
+
+@app.get("/api/v1/jobs/{job_id}")
+def job_status(job_id: str):
+    result = jobs.state(job_id)
+    if result is None:
+        raise HTTPException(404, "Training job not found")
+    return result
+
+
+@app.get("/api/v1/data/datasets/{dataset}")
+def dataset_info(dataset: Dataset):
+    frame = load(dataset)
+    return {
+        "dataset": dataset,
+        "rows": len(frame),
+        "origins": sorted(frame.origin.unique().tolist()),
+        "destinations": sorted(frame.dest.unique().tolist()),
+        "carriers": sorted(frame.carrier.unique().tolist()),
+        "coverage": [str(frame.date.min()), str(frame.date.max())],
+        "revision": dataset_revision(dataset),
     }

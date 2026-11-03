@@ -1,100 +1,103 @@
 # AeroTwin
 
-**Open-source aviation intelligence: live ADS-B radar, historical flight analytics, delay forecasting, and disruption simulation.**
+**Local-first aviation intelligence: ADS-B radar, historical analytics, temporal delay forecasting and assumption-based disruption simulation.**
 
-A local-first aviation data science control tower. Python does the analysis; React makes assumptions, provenance and uncertainty inspectable. No API keys, account, cloud database, paid service, GPU or LLM is required to run it. Live aircraft and optional online tiles require Internet; every core workflow starts in an explicitly labeled offline synthetic demo.
+[Guida completa in italiano](docs/guida-italiano.md) · [Download releases](https://github.com/massibrevo/aerotwin/releases) · [Scientific methodology](docs/methodology.md)
 
-> Research and education only. Not certified for dispatch, air traffic control, safety assessment or operational aviation decisions.
+AeroTwin **0.2.0** runs a compiled React interface and Python API on **one local server**. No API keys, cloud account, hosted database, telemetry, GPU or LLM. First setup needs Internet for open-source dependencies; the offline demonstration then works without network. Live observations and optional online tiles require network access.
 
-![AeroTwin control tower with explicitly labeled synthetic data](docs/screenshots/control-tower.png)
+> Research, teaching and portfolio use only. No certification for dispatch, air traffic control, navigation or safety decisions. Software tests do not validate real aviation forecasting accuracy.
 
-## Run locally
+![Actual AeroTwin control tower, explicitly synthetic](docs/screenshots/control-tower.png)
 
-Install **Python 3.12+**, **Node.js 20+** and npm. Python 3.12/3.13 are recommended because scientific wheels may lag the newest interpreter. In the repository root:
+## Install a distribution ZIP
+
+Download `aerotwin-0.2.0.zip` from [Releases](https://github.com/massibrevo/aerotwin/releases), extract it, install **Python 3.12 or 3.13**, and run inside the extracted directory:
 
 ```bash
 python scripts/bootstrap.py
-python scripts/dev.py
+python scripts/serve.py
 ```
 
-Open **http://127.0.0.1:5173**, with API docs at **http://127.0.0.1:8000/docs**. Bootstrap creates `.venv`, installs version-locked dependencies, generates 3,840 seeded synthetic flight records and a 20-frame synthetic replay, and **actually trains** a historical median, ridge and gradient boosting model. It saves the selected model and measured reports locally; no binary pickle is shipped in Git.
-
-If the frontend port is occupied, use `python scripts/dev.py --frontend-port 5188` and open the printed URL. The launcher checks ports and never terminates unrelated services. Both children stop on Ctrl-C.
+The ZIP contains the compiled frontend, so **Node is not needed** to bootstrap/run it. Python creates its own `.venv`, installs pinned dependencies, generates seeded examples and trains an actual tiny demo model. Open **http://127.0.0.1:5188** after `AeroTwin ready`. Ctrl-C stops it. A ZIP checksum and internal file manifest are provided; Python itself is not bundled.
 
 ```bash
-python scripts/verify.py                        # servers must be running
-python scripts/verify.py --frontend-port 5188   # alternate frontend port
+python scripts/verify.py --base-url http://127.0.0.1:5188
 ```
 
-On macOS/Linux, activate with `source .venv/bin/activate`; on Windows PowerShell use `.venv\Scripts\Activate.ps1`. Commands below assume the environment is active. You may use `python3` instead of `python` before activation.
+Expected: **10/10 checks passed**. Use `--port 5190` if the default port is occupied, and change the verification URL accordingly. Existing processes are never killed by the launcher.
 
-Manual launch in two terminals:
+## Run from source
+
+Source checkout requires Python 3.12/3.13, Node.js 20+ and npm to compile the frontend:
 
 ```bash
-python -m uvicorn aerotwin.api.app:app --host 127.0.0.1 --port 8000
-npm --prefix frontend run dev
+git clone https://github.com/massibrevo/aerotwin.git
+cd aerotwin
+python scripts/bootstrap.py
+python scripts/serve.py
 ```
 
-## What works
+Use `python3.12`/`python3` if appropriate on macOS/Linux or `py -3.12` on Windows. Use `--source-build` to force a frontend rebuild. For development/testing, `python scripts/bootstrap.py --dev` installs test dependencies and compiles; `python scripts/dev.py` retains the separate Vite/API development servers.
 
-| Workspace | Implemented behavior | Provenance |
+Optional **AEROTWIN_HOME** selects a private writable state directory outside the source. Set it consistently for bootstrap, CLI and server. Without it, state stays inside the project. Existing 0.1 BTS snapshots can be read, but legacy models must be retrained. Bootstrap upgrades the demo artifact format. [Backup/update instructions](docs/guida-italiano.md#7-backup-aggiornamenti-e-manutenzione).
+
+## Working features
+
+| Area | Implemented behavior | Meaning |
 | --- | --- | --- |
-| Control tower | Computed coverage counts, flight summaries, quality checks, daily chart, route frequencies | Per-layer labels |
-| Live radar | ADSB.lol observations, rotated selectable aircraft, search, altitude/speed filters, presets/custom geography, cadence/pause, freshness, details | `LIVE` only on successful real requests |
-| Offline radar & replay | Bundled Natural Earth map, zoom/pan, seeded positions, frame slider, fixed observation epoch | `SYNTHETIC DEMO` / `REPLAY · SYNTHETIC` |
-| Airport pulse | Schedule hour bins, observed altitude distribution and explicitly limited climb/descent proxies | Schedule and radar geography distinguished |
-| Historical explorer | DuckDB parameterized filters, date/origin/search, pagination, route/airline aggregates, matching CSV export (max 500 rows) | Synthetic or explicit BTS import |
-| Forecast lab | Saved Python model inference, baseline comparison, validation-selected estimator, temporal test metrics, residual interval, holdout scatter, permutation importance | `SYNTHETIC DEMO MODEL` until real training |
-| Network simulator | Directed route graph, degree/betweenness/risk index, actual SimPy queues, paired repeated scenarios, downstream slack assumptions | `SIMULATION`, never causal effect |
-| Data & methodology | Source terms, local import provenance, checksums, model artifacts/validation, session simulation history, scientific limitations | No hidden data sources |
+| Control tower | Computed counts, quality, daily delay and route frequencies | Radar coverage and flight datasets are separate |
+| Live radar | ADSB.lol, shared cache/backoff, presets/custom region, search/altitude/speed, selectable rotated aircraft, freshness | Community observations; failure is never silently synthetic |
+| Offline/replay | Bundled Natural Earth map, pan/zoom, deterministic positions and 20 replay frames | Explicit synthetic examples, fixed 2025 epoch |
+| Airport pulse | Dataset-aware airport controls, schedule hour bins, altitude distribution and climb/descent proxies | Not official airport movement statistics |
+| History | Parameterized DuckDB filters/pagination, matching CSV export (max 500), aggregate charts | Synthetic examples or user-imported BTS schema |
+| Data workspace | CSV import from browser (20 MiB) or CLI, monthly immutable Parquet snapshots and atomic active manifest | Quality/provenance is inspectable; source authenticity is user responsibility |
+| Forecast lab | Actual background training, baseline/ML comparison, chronological validation/test, subgroup metrics, residual intervals, inference | Stale/damaged/incompatible models and unsupported airports/carriers are rejected |
+| Simulator | Directed graph and measured centralities, real SimPy queues, paired repeated scenarios and stylized downstream slack | Hypothetical assumptions; not causal effects or calibrated operational impacts |
+| Experiments | Persistent local SQLite ledger for imports/training/jobs/simulations | Survives application restart; interrupted training is marked failed |
+| Guide | In-app Italian walkthrough plus detailed installation/interpretation/limitations document | Research scope stays explicit |
 
-No weather integration, ADSB.fi fallback, GNN, official airport movement reconstruction, tail-rotation propagation or static GitHub Pages demo is claimed. The optional online map uses MapLibre/OpenFreeMap; the offline map is the default. No unbounded tile caching.
+## Import and train BTS data
 
-## Import real BTS flights
+Download official Reporting Carrier On-Time Performance CSVs manually from [BTS TranStats](https://www.transtats.bts.gov/). No official raw file or observed ADS-B database is redistributed. In **Data & experiments**, select the CSV, supply missing origin airport IANA zones and import; inspect quality before training. The browser limit is **20 MiB**. Every import replaces the active dataset; combine months into one coherent CSV before importing if you need multi-month coverage. Previous snapshots remain on disk.
 
-Download **Reporting Carrier On-Time Performance** CSVs manually from [BTS TranStats](https://www.transtats.bts.gov/). There is no invented automatic download endpoint. Raw files stay outside Git. Start with a small official extract.
-
-```bash
-python -m aerotwin.cli ingest-bts --input /path/to/official_bts.csv
-python -m aerotwin.cli train --dataset bts
-```
-
-Built-in IANA timezone mappings cover BCN/LHR/AMS/JFK/ATL/ORD/LAX/DFW. Other origin airports require an explicit JSON mapping, e.g. `{"SFO":"America/Los_Angeles","BOS":"America/New_York"}`:
+CLI after activating `.venv`:
 
 ```bash
 python -m aerotwin.cli ingest-bts --input /path/to/bts.csv --timezone-map /path/to/zones.json
+python -m aerotwin.cli train --dataset bts
 ```
 
-Accepted aliases include `FL_DATE`/`FlightDate`, `OP_UNIQUE_CARRIER`/`Reporting_Airline`, `CRS_DEP_TIME`/`CRSDepTime`, `DEP_DELAY`/`DepDelay`, and `OP_CARRIER_FL_NUM`/`Flight_Number_Reporting_Airline`. Also required: `Origin`, `Dest`, `Cancelled`, `Diverted`, `Distance`. Null departure delay is preserved. Cancelled rows have no regression target; cancelled/diverted rows are excluded from training. Exact flight keys are deduplicated. `2400` means next-day midnight; ambiguous or nonexistent local DST times are rejected. Imports replace one typed Parquet snapshot atomically and record a file checksum and quality report. This initial release uses a single Parquet snapshot rather than month partitions.
+Example timezone map: `{"SFO":"America/Los_Angeles","BOS":"America/New_York"}`. Built-in zones cover BCN/LHR/AMS/JFK/ATL/ORD/LAX/DFW. Unknown/ambiguous DST times are rejected. `2400` rolls to next-day midnight. Cancelled/diverted rows remain in analytics and are excluded from training. Stable flight keys are deduplicated. A file matching BTS's schema is not independently authenticated as an official BTS file.
 
-Choose **Imported BTS** in the historical dataset selector and **BTS IMPORT MODEL** in Forecast Lab after training. The radar mode is independent of the historical dataset selector.
+Accepted columns: `FlightDate`/`FL_DATE`, `Reporting_Airline`/`OP_UNIQUE_CARRIER`/`OP_CARRIER`, `Origin`, `Dest`, `CRSDepTime`/`CRS_DEP_TIME`, `DepDelay`/`DEP_DELAY`, `Cancelled`, `Diverted`, `Distance`, `Flight_Number_Reporting_Airline`/`OP_CARRIER_FL_NUM`.
 
-## Reproduce & test
+## Scientific scope
+
+Predict **departure delay minutes at T−120 minutes** from schedule-only fields. Chronological train/validation/test windows use a conservative actual-departure +24h label-availability embargo. Validation selects ridge/gradient boosting; held-out metrics and median baseline are actually computed. Residual intervals have nominal 90% coverage and measured test coverage, not a drift-proof guarantee. Group test errors and global permutation importance are inspectable.
+
+Bundled demo: **3,840 synthetic flights**, test MAE approximately **7.17min** versus median baseline **9.85min**. These are not real aviation benchmark results. No official BTS extract has been independently acquired/validated for this release. Generated BTS-schema fixtures in tests verify plumbing only.
+
+Simulation: 150 uniform ready times / 360min, one FCFS equivalent runway, lognormal service mean 1.8min, bounded capacity shock at minute 60 and assumed 20–60min connection slack. Same random inputs pair baseline/scenario; zero shock yields zero added delay. Airport identity/network comes from data, but capacity/demand and propagation are not calibrated to it. No actual tail-rotation, crew, sector or weather modeling is claimed.
+
+## Validate and package
+
+After `bootstrap.py --dev`:
 
 ```bash
-python -m aerotwin.cli demo
-python -m aerotwin.cli train --dataset synthetic
-python -m pytest -q
-ruff check backend tests/backend scripts
+.venv/bin/python -m pytest -q
+.venv/bin/ruff check backend tests/backend scripts
 npm --prefix frontend test
 npm --prefix frontend run build
-cd frontend
+# With production server running; from frontend:
 npx playwright install chromium
-npm run test:e2e
+AEROTWIN_URL=http://127.0.0.1:5188 npm run test:e2e
+# From repository root, with all release source files tracked:
+python scripts/package_release.py
 ```
 
-Playwright requires both servers running. Set `AEROTWIN_URL` for a different frontend port. If the downloaded Chromium cannot render on your machine, `AEROTWIN_BROWSER_CHANNEL=chrome` selects installed Chrome; see [troubleshooting](docs/troubleshooting.md). CI starts local servers and runs all checks without live-provider dependence.
+On Windows use `.venv\Scripts\python` and PowerShell environment syntax. See [release verification](docs/evaluation-v0.2.md) and [troubleshooting](docs/troubleshooting.md). Local macOS browser checks can select installed Chrome with `AEROTWIN_BROWSER_CHANNEL=chrome`; Linux CI uses Playwright Chromium.
 
-Read [evaluation](docs/evaluation.md) for measured local release evidence. Scores on the bundled synthetic process **are not aviation benchmark results**.
+Code/examples **MIT**, offline Natural Earth **public domain**, ADSB.lol observations **ODbL**, optional OpenFreeMap/OSM subject to provider terms and attribution. [Sources/licenses](docs/datasets-and-licenses.md). No public-hosting authentication layer is supplied: keep the server on loopback.
 
-## Scientific design
-
-The target is departure delay in minutes, issued **120 minutes before scheduled local departure** for a US domestic schedule row. Only origin/destination/carrier and schedule-derived month, weekday, hour and distance are allowed. Train/validation/test splits are chronological, with conservative label availability at actual departure +24h. Model selection uses validation MAE. A validation-residual interval reports its nominal and measured holdout coverage without guaranteeing future coverage. Expanding-origin ridge evaluations provide additional time checks.
-
-Simulation uses 150 stylized arrivals over 360 minutes, one FCFS equivalent runway, lognormal service with mean 1.8 minutes and hypothetical capacity reduction starting at minute 60. Paired baseline/scenario share random inputs. Connection slack is assumed uniform 20–60 minutes; real aircraft rotations are **not known**. See the [didactic methodology](docs/methodology.md).
-
-## Source terms & architecture
-
-Code and deterministic examples: **MIT**. Offline basemap: **Natural Earth, public domain**. Live observations: **[ADSB.lol](https://api.adsb.lol/docs), ODbL**, attribution and database redistribution obligations apply. Optional tiles: **[OpenFreeMap](https://openfreemap.org/tos/)** / © OpenStreetMap contributors. Provider availability/terms may change. No observed ADS-B positions or official raw BTS data are redistributed here. [Dataset details](docs/datasets-and-licenses.md).
-
-[Architecture](docs/architecture.md) · [Methodology](docs/methodology.md) · [Evaluation](docs/evaluation.md) · [UX](docs/ux.md) · [Deployment](docs/deployment.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
+[Architecture](docs/architecture.md) · [Methodology](docs/methodology.md) · [Italian guide](docs/guida-italiano.md) · [Deployment](docs/deployment.md) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)

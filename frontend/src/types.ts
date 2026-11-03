@@ -95,6 +95,16 @@ export interface Model {
     mae: number;
     rmse: number;
   }[];
+  support?: {
+    origins: string[];
+    destinations: string[];
+    carriers: string[];
+    numeric_ranges: Record<string, number[]>;
+  };
+  subgroup_test_metrics?: Record<
+    string,
+    { n: number; mae: number; rmse: number }
+  >;
   caveat: string;
 }
 export interface Prediction {
@@ -170,3 +180,13 @@ export type RadarProps = {
   age: number | null;
   refreshNow: () => void;
 };
+
+export interface DatasetInfo {
+  dataset: string;
+  rows: number;
+  origins: string[];
+  destinations: string[];
+  carriers: string[];
+  coverage: string[];
+  revision: string;
+}

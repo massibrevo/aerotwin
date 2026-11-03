@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import re
+import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -81,12 +83,45 @@ def generate(seed=42, days=120, per_day=32):
     return frame
 
 
+def provenance():
+    root = DATA / "processed" / "bts"
+    current = root / "current.json"
+    legacy = root / "provenance.json"
+    if current.exists():
+        return json.loads(current.read_text())
+    return json.loads(legacy.read_text()) if legacy.exists() else None
+
+
+def parquet_files():
+    meta = provenance()
+    root = DATA / "processed" / "bts"
+    if meta and meta.get("snapshot_id"):
+        snapshot_id = meta["snapshot_id"]
+        if not re.fullmatch(r"[a-f0-9]{32}", snapshot_id):
+            raise ValueError("Invalid local dataset manifest")
+        return sorted((root / "snapshots" / snapshot_id).glob("year=*/month=*/*.parquet"))
+    return [root / "flights.parquet"] if (root / "flights.parquet").exists() else []
+
+
+def dataset_revision(dataset):
+    if dataset == "bts":
+        meta = provenance()
+        if not meta:
+            raise ValueError("No BTS dataset. Import an official CSV first.")
+        return meta.get("snapshot_id", meta["input_sha256"])
+    path = DATA / "demo" / "flights.csv"
+    if not path.exists():
+        generate()
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def load(dataset="synthetic"):
     if dataset == "bts":
-        path = DATA / "processed" / "bts"
-        if not path.exists():
-            raise ValueError("No BTS dataset. Import an official CSV with ingest-bts first.")
-        return pd.read_parquet(path / "flights.parquet")
+        files = parquet_files()
+        if not files:
+            raise ValueError("No BTS dataset. Import an official CSV first.")
+        with duckdb.connect() as db:
+            return db.read_parquet([str(p) for p in files], hive_partitioning=False).df()
     path = DATA / "demo" / "flights.csv"
     if not path.exists():
         generate()
@@ -119,6 +154,8 @@ def ingest_bts(path: Path, timezone_map=None):
         "DISTANCE",
         "FLIGHT_NUMBER_REPORTING_AIRLINE",
     }
+    if raw.columns.duplicated().any():
+        raise ValueError("Duplicate CSV column names are not supported")
     if required - set(raw.columns):
         raise ValueError(f"Missing BTS columns: {sorted(required - set(raw.columns))}")
     zones = {a["iata"]: a["tz"] for a in AIRPORTS} | (timezone_map or {})
@@ -192,13 +229,18 @@ def ingest_bts(path: Path, timezone_map=None):
         raise ValueError("CSV has no flight rows")
     dest = DATA / "processed" / "bts"
     dest.mkdir(parents=True, exist_ok=True)
-    # Replace snapshot atomically; no accumulation of duplicates across imports.
-    temp = dest / "flights.tmp.parquet"
-    frame.sort_values("scheduled_utc").to_parquet(temp, index=False)
-    temp.replace(dest / "flights.parquet")
+    # Immutable monthly partitions become visible together via one atomic manifest switch.
+    snapshot_id = uuid.uuid4().hex
+    snapshot = dest / "snapshots" / snapshot_id
+    for (year, month), partition in frame.groupby([frame.date.str[:4], frame.date.str[5:7]]):
+        folder = snapshot / f"year={year}" / f"month={month}"
+        folder.mkdir(parents=True, exist_ok=True)
+        partition.sort_values("scheduled_utc").to_parquet(folder / "flights.parquet", index=False)
     report = {
-        "source": "BTS user import",
-        "data_class": "real",
+        "source": "BTS-schema user import (source authenticity unverified)",
+        "snapshot_id": snapshot_id,
+        "storage": "immutable monthly Parquet partitions",
+        "data_class": "user_import",
         "rows": len(frame),
         "duplicates_removed": len(raw) - len(frame),
         "null_delay": int(frame.dep_delay.isna().sum()),
@@ -209,13 +251,21 @@ def ingest_bts(path: Path, timezone_map=None):
         "coverage": [frame.date.min(), frame.date.max()],
         "timezone_map": zones,
     }
-    (dest / "provenance.json").write_text(json.dumps(report, indent=2))
+    pending = dest / f"{snapshot_id}.tmp"
+    pending.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    pending.replace(dest / "current.json")
+    from aerotwin.storage import record
+
+    record("import", report)
     return report
 
 
 def query(dataset="synthetic", search="", origin="", start="", end="", page=1, page_size=50):
-    frame = load(dataset)
-    sql = "SELECT * FROM frame WHERE 1=1"
+    if start and end and start > end:
+        raise ValueError("Start date must be on or before end date")
+    if not 1 <= page_size <= 500 or page < 1:
+        raise ValueError("Invalid page size or page")
+    sql = "SELECT * FROM flights WHERE 1=1"
     params = []
     for clause, value in [
         (" AND (flight_id ILIKE ? OR carrier ILIKE ? OR dest ILIKE ?)", search),
@@ -227,16 +277,27 @@ def query(dataset="synthetic", search="", origin="", start="", end="", page=1, p
             sql += clause
             params.extend([f"%{value}%"] * 3 if "ILIKE" in clause else [value])
     with duckdb.connect() as db:
-        db.register("frame", frame)
-        selected = db.execute(sql + " ORDER BY scheduled_utc", params).df()
+        if dataset == "bts":
+            files = parquet_files()
+            if not files:
+                raise ValueError("No BTS dataset. Import an official CSV first.")
+            db.read_parquet([str(p) for p in files], hive_partitioning=False).create_view("flights")
+        else:
+            db.register("flights", load(dataset))
+        total = db.execute("SELECT count(*) FROM (" + sql + ")", params).fetchone()[0]
+        coverage = db.execute("SELECT min(date), max(date) FROM flights").fetchone()
+        selected = db.execute(
+            sql + " ORDER BY scheduled_utc, flight_id LIMIT ? OFFSET ?",
+            params + [page_size, (page - 1) * page_size],
+        ).df()
     clean = selected.astype(object).where(pd.notna(selected), None)
     return {
-        "total": len(selected),
+        "total": total,
         "page": page,
         "page_size": page_size,
         "data_class": dataset,
-        "coverage": [str(frame.date.min()), str(frame.date.max())],
-        "rows": clean.iloc[(page - 1) * page_size : page * page_size].to_dict("records"),
+        "coverage": [str(v) for v in coverage],
+        "rows": clean.to_dict("records"),
     }
 
 
@@ -259,7 +320,7 @@ def summary(dataset="synthetic"):
         "null_delay": int(f.dep_delay.isna().sum()),
         "cancelled": int(f.cancelled.sum()),
         "coverage": [str(f.date.min()), str(f.date.max())],
-        "daily": by_day.fillna(0).to_dict("records"),
-        "routes": routes.fillna(0).to_dict("records"),
-        "airlines": airlines.fillna(0).to_dict("records"),
+        "daily": by_day.astype(object).where(pd.notna(by_day), None).to_dict("records"),
+        "routes": routes.astype(object).where(pd.notna(routes), None).to_dict("records"),
+        "airlines": airlines.astype(object).where(pd.notna(airlines), None).to_dict("records"),
     }

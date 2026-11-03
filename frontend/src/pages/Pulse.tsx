@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApi } from "../api";
-import type { RadarProps } from "../types";
+import type { RadarProps, DatasetInfo } from "../types";
 import { Badge, State, Stat, Panel, Chart, num } from "../components/UI";
 export default function Pulse(p: RadarProps & { dataset: string }) {
+  const info = useApi<DatasetInfo>("/data/datasets/" + p.dataset);
   const [iata, setIata] = useState("ATL");
+  useEffect(() => {
+    if (info.data && !info.data.origins.includes(iata))
+      setIata(info.data.origins[0]);
+  }, [info.data, iata]);
   const r = useApi<{
     schedule_departures: number;
     hourly: { hour: number; flights: number }[];
@@ -29,7 +34,7 @@ export default function Pulse(p: RadarProps & { dataset: string }) {
             value={iata}
             onChange={(e) => setIata(e.target.value)}
           >
-            {["ATL", "JFK", "ORD", "LAX", "DFW"].map((a) => (
+            {(info.data?.origins ?? []).map((a) => (
               <option key={a}>{a}</option>
             ))}
           </select>

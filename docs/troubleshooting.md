@@ -1,10 +1,12 @@
-# Troubleshooting
+# Troubleshooting — 0.2
 
-- Python installation: use 3.12/3.13 if a newer interpreter lacks scientific wheels. Bootstrap requires >=3.12 and Node >=20. Do not disable TLS validation.
-- Busy port: preserve unrelated services. `python scripts/dev.py --frontend-port 5188`; then verify with the same flag and use `AEROTWIN_URL=http://127.0.0.1:5188` for Playwright. Free backend port 8000 before launch.
-- No BTS/model: expected on first launch. Select Synthetic examples, or import an official CSV then train `bts`. Unknown origin zones require `--timezone-map zones.json`. DST ambiguity must be resolved in the source, not guessed.
-- Live 429/error: respect cooldown. Select demo/replay explicitly; no fabricated LIVE fallback. Do not run multiple provider workers to bypass limits.
-- Map/WebGL failure: use the bundled offline SVG. Online tiles are optional and no bulk cache is implemented.
-- Browser tests: from frontend run `npx playwright install chromium` (Linux CI adds `--with-deps`), start both servers, then `npm run test:e2e`. Keep `PLAYWRIGHT_BROWSERS_PATH` consistent if customized. On macOS, if downloaded Chromium stalls on rendering, installed Chrome can be selected with `AEROTWIN_BROWSER_CHANNEL=chrome`. Do not mark failed tests passed.
-- Library deprecation warnings remain visible and do not imply failed assertions. Pin tested versions for reproduction. `LOKY_MAX_CPU_COUNT=2` avoids a joblib macOS CPU-detection warning.
-- Simulation history is intentionally bounded in server memory (50 runs). It resets on restart; model reports persist locally. Durable experiment history/monthly partitions are future improvements.
+- **Python/dependencies:** use Python 3.12/3.13 if a very new interpreter lacks scientific wheels. Bootstrap creates `.venv`; first dependency download requires Internet. A distribution ZIP already contains `frontend/dist`; a source checkout needs Node 20+/npm for a build.
+- **Busy port:** use `python scripts/serve.py --port 5190` and matching `verify.py --base-url http://127.0.0.1:5190`. Existing services are never stopped automatically. `dev.py` is only the two-server development alternative.
+- **No model / legacy model:** rerun bootstrap for the demo, or train from Data & experiments. Changing data or sklearn versions requires retraining; an old model is not silently reused.
+- **BTS import rejected:** inspect schema, dates, flags, nulls and missing IANA zones. Unknown/DST-ambiguous origin times are rejected. Browser imports max 20MiB; CLI supports larger files within available memory. Invalid CSV does not replace the active snapshot. Every successful import replaces rather than appends.
+- **Training fails:** fewer than 100 valid completed flights, insufficient time coverage after the 24h embargo, null targets or invalid inputs can prevent meaningful splits. Status/error is shown in the UI and recorded. A restart marks incomplete jobs interrupted/failed.
+- **LIVE error/429:** respect cooldown, choose demo/replay explicitly, and do not add workers to bypass provider limits. Missing observation age is not assumed fresh. A zero count is not proof of absent traffic.
+- **Map/WebGL failure:** bundled offline SVG remains available. Online tiles and their availability are optional. Natural Earth geography is coarse and not a navigation chart.
+- **Tests/browser:** install dev dependencies (`bootstrap.py --dev`), then Playwright Chromium. Use AEROTWIN_URL for the production server. On macOS, AEROTWIN_BROWSER_CHANNEL=chrome selects installed Chrome if the downloaded headless shell stalls. Test state is isolated; generated BTS-schema fixtures do not demonstrate real forecasting accuracy.
+- **Backup/state:** AEROTWIN_HOME must match across bootstrap/CLI/server. It does not auto-migrate existing state. Stop the server before copying the state root; preserve SQLite companion files and original CSVs. Old snapshot/model files accumulate; no automatic retention cleanup is implemented.
+- **Warnings:** upstream Python deprecation and MapLibre vendor-size warnings remain visible. They are not failed tests. Node is a build dependency only; Python's scientific libraries remain runtime dependencies.

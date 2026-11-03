@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FlaskConical } from "lucide-react";
 import {
   CartesianGrid,
@@ -25,6 +25,21 @@ export default function Forecast() {
     dow: 4,
     distance: 760,
   });
+  useEffect(() => {
+    if (model?.support)
+      setValues((v) => ({
+        ...v,
+        origin: model.support!.origins.includes(v.origin)
+          ? v.origin
+          : model.support!.origins[0],
+        dest: model.support!.destinations.includes(v.dest)
+          ? v.dest
+          : model.support!.destinations[0],
+        carrier: model.support!.carriers.includes(v.carrier)
+          ? v.carrier
+          : model.support!.carriers[0],
+      }));
+  }, [model]);
   const [result, setResult] = useState<Prediction>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -86,6 +101,12 @@ export default function Forecast() {
               }
             }}
           >
+            <p className="small muted">
+              Training support: airports{" "}
+              {model?.support?.origins.join(", ") ?? "see model report"};
+              carriers {model?.support?.carriers.join(", ") ?? "unknown"}.
+              Unseen airports/carriers are rejected.
+            </p>
             <div className="form-grid">
               {(["origin", "dest", "carrier"] as const).map((k) => (
                 <label key={k}>
@@ -99,12 +120,13 @@ export default function Forecast() {
                     required
                     pattern={k === "carrier" ? "[A-Z0-9]{2,3}" : "[A-Z]{3}"}
                     value={values[k]}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setResult(undefined);
                       setValues({
                         ...values,
                         [k]: e.target.value.toUpperCase(),
-                      })
-                    }
+                      });
+                    }}
                   />
                 </label>
               ))}
@@ -125,9 +147,10 @@ export default function Forecast() {
                     min={k === "distance" || k === "month" ? 1 : 0}
                     max={{ hour: 23, month: 12, dow: 6, distance: 12000 }[k]}
                     value={values[k]}
-                    onChange={(e) =>
-                      setValues({ ...values, [k]: +e.target.value })
-                    }
+                    onChange={(e) => {
+                      setResult(undefined);
+                      setValues({ ...values, [k]: +e.target.value });
+                    }}
                   />
                 </label>
               ))}

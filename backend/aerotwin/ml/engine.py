@@ -2,13 +2,17 @@
 
 import hashlib
 import json
+import re
+import uuid
 from datetime import UTC, datetime
 
 import joblib
 import numpy as np
 import pandas as pd
 from aerotwin.config import MODELS
-from aerotwin.data.store import load
+from aerotwin.data.store import load, dataset_revision
+from aerotwin.storage import record
+import sklearn
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor
@@ -62,6 +66,7 @@ def pipeline(estimator):
 
 
 def train(dataset="synthetic"):
+    revision = dataset_revision(dataset)
     f = prepare(load(dataset))
     tr, val, test = splits(f)
     candidates = {
@@ -88,6 +93,16 @@ def train(dataset="synthetic"):
     pred = model.predict(test[FEATURES])
     report = {
         "model_id": dataset,
+        "format_version": 2,
+        "dataset_revision": revision,
+        "sklearn_version": sklearn.__version__,
+        "support": {
+            "origins": sorted(tr.origin.unique().tolist()),
+            "destinations": sorted(tr.dest.unique().tolist()),
+            "carriers": sorted(tr.carrier.unique().tolist()),
+            "routes": sorted({f"{o}-{d}" for o, d in zip(tr.origin, tr.dest)}),
+            "numeric_ranges": {k: [float(tr[k].min()), float(tr[k].max())] for k in NUM},
+        },
         "data_class": dataset,
         "selected_model": name,
         "label": "SYNTHETIC DEMO MODEL" if dataset == "synthetic" else "BTS IMPORT MODEL",
@@ -132,9 +147,37 @@ def train(dataset="synthetic"):
                     **metric(future.dep_delay, fold.predict(future[FEATURES])),
                 }
             )
-    MODELS.mkdir(exist_ok=True)
-    joblib.dump({"model": model, "radius": q, "report": report}, MODELS / f"{dataset}.joblib")
-    (MODELS / f"{dataset}.json").write_text(json.dumps(report, indent=2))
+    report["subgroup_test_metrics"] = {
+        str(origin): {"n": int(mask.sum()), **metric(test.dep_delay[mask], pred[mask])}
+        for origin in sorted(test.origin.unique())
+        for mask in [test.origin.to_numpy() == origin]
+    }
+    if dataset_revision(dataset) != revision:
+        raise ValueError("Dataset changed during training. Retry against the current import.")
+    MODELS.mkdir(parents=True, exist_ok=True)
+    artifact_name = f"{dataset}-{uuid.uuid4().hex}.joblib"
+    artifact_path = MODELS / artifact_name
+    joblib.dump({"model": model, "radius": q, "report": report}, artifact_path)
+    report["artifact"] = artifact_name
+    report["artifact_sha256"] = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+    pending = MODELS / f"{artifact_name}.tmp"
+    pending.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    pending.replace(MODELS / f"{dataset}.json")
+    record(
+        "training",
+        {
+            k: report[k]
+            for k in [
+                "model_id",
+                "trained_at",
+                "selected_model",
+                "n",
+                "metrics",
+                "dataset_revision",
+                "artifact_sha256",
+            ]
+        },
+    )
     return report
 
 
@@ -144,11 +187,49 @@ def reports():
     ]
 
 
+def model_report(model_id):
+    if model_id not in ("synthetic", "bts") or not (MODELS / f"{model_id}.json").exists():
+        raise ValueError("Model not trained. Train the selected dataset from Data & experiments.")
+    report = json.loads((MODELS / f"{model_id}.json").read_text())
+    if report.get("format_version") != 2:
+        raise ValueError("Legacy model artifact. Retrain from Data & experiments or bootstrap.")
+    if not re.fullmatch(model_id + r"-[a-f0-9]{32}\.joblib", report.get("artifact", "")):
+        raise ValueError("Invalid local model manifest. Retrain the model.")
+    return report
+
+
+def checked_artifact(report):
+    path = MODELS / report["artifact"]
+    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != report["artifact_sha256"]:
+        raise ValueError("Model integrity check failed. Retrain using trusted local data.")
+    return path
+
+
+def validated_model(model_id):
+    report = model_report(model_id)
+    if report["dataset_revision"] != dataset_revision(model_id):
+        raise ValueError("Model is stale: dataset changed. Retrain before predicting.")
+    if report["sklearn_version"] != sklearn.__version__:
+        raise ValueError("Scientific dependencies changed. Retrain before predicting.")
+    path = checked_artifact(report)
+    return report, path
+
+
 def predict(model_id, values):
-    if model_id not in ("synthetic", "bts") or not (MODELS / f"{model_id}.joblib").exists():
-        raise ValueError("Model not trained; run python -m aerotwin.cli train --dataset " + model_id)
-    # Only our fixed local artifacts are ever loaded. No uploaded/user-selected model paths.
-    artifact = joblib.load(MODELS / f"{model_id}.joblib")
+    report, path = validated_model(model_id)
+    support = report["support"]
+    if values["origin"] not in support["origins"] or values["dest"] not in support["destinations"]:
+        raise ValueError("Airport outside the model's training support")
+    if values["carrier"] not in support["carriers"]:
+        raise ValueError("Carrier outside the model's training support")
+    warnings = [report["caveat"]]
+    if f"{values['origin']}-{values['dest']}" not in support["routes"]:
+        warnings.append("This route was not observed in training; extrapolation may be unreliable.")
+    for key, (low, high) in support["numeric_ranges"].items():
+        if not low <= values[key] <= high:
+            warnings.append(f"{key} is outside training range [{low:g}, {high:g}].")
+    # Checksums detect damage, not malicious pickle replacement. Never accept uploaded models.
+    artifact = joblib.load(path)
     value = float(artifact["model"].predict(pd.DataFrame([values])[FEATURES])[0])
     q = artifact["radius"]
     return {
@@ -158,6 +239,8 @@ def predict(model_id, values):
         "horizon_minutes": 120,
         "model_id": model_id,
         "data_class": model_id,
-        "label": artifact["report"]["label"],
-        "caveat": artifact["report"]["caveat"],
+        "label": report["label"],
+        "caveat": report["caveat"],
+        "warnings": warnings,
+        "dataset_revision": report["dataset_revision"],
     }

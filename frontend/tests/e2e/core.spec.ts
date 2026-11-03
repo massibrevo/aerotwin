@@ -136,6 +136,96 @@ test("unavailable online tiles automatically return to offline geometry", async 
   await expect(
     page.getByRole("button", { name: "Enable online map" }),
   ).toBeVisible({ timeout: 20000 });
-  await expect(page.locator(".map-warning")).toContainText(/unavailable|timed out/);
+  await expect(page.locator(".map-warning")).toContainText(
+    /unavailable|timed out/,
+  );
   await expect(page.locator(".land").first()).toBeAttached();
+});
+
+test("Italian guide explains interpretation and limits", async ({ page }) => {
+  await page.goto("/guide");
+  await expect(
+    page.getByRole("heading", { name: "Guida rapida · italiano" }),
+  ).toBeVisible();
+  await expect(page.locator("main")).toContainText("120 minuti");
+  await expect(page.locator("main")).toContainText(
+    "non significa accuratezza del 93%",
+  );
+});
+
+test("model training from the interface finishes and persists a measured report", async ({
+  page,
+}) => {
+  await page.goto("/data");
+  await page
+    .getByRole("button", { name: "Train and evaluate model", exact: true })
+    .click();
+  await expect(
+    page.getByText("Model and measured validation report saved.", {
+      exact: true,
+    }),
+  ).toBeVisible({ timeout: 45000 });
+  await page.reload();
+  await expect(page.locator("main")).toContainText("gradient_boosting");
+});
+
+test("malformed CSV import is rejected with a visible explanation", async ({
+  page,
+}) => {
+  await page.goto("/data");
+  await page.getByLabel("BTS CSV file", { exact: true }).setInputFiles({
+    name: "invalid.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("wrong,columns\n1,2\n"),
+  });
+  await page
+    .getByRole("button", { name: "Import BTS CSV locally", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("Missing BTS columns");
+});
+
+test("valid BTS-schema fixture imports, trains and predicts end to end", async ({
+  page,
+}) => {
+  const lines = [
+    "FlightDate,Reporting_Airline,Origin,Dest,CRSDepTime,DepDelay,Cancelled,Diverted,Distance,Flight_Number_Reporting_Airline",
+  ];
+  for (let d = 0; d < 40; d++)
+    for (let j = 0; j < 16; j++) {
+      const date = new Date(Date.UTC(2025, 0, 1 + d))
+        .toISOString()
+        .slice(0, 10);
+      lines.push(
+        `${date},DL,${j % 2 ? "JFK,ATL" : "ATL,JFK"},${(6 + j) * 100},${((d * 7 + j) % 40) - 5},0,0,760,${100 + j}`,
+      );
+    }
+  await page.goto("/data");
+  await page.getByLabel("BTS CSV file", { exact: true }).setInputFiles({
+    name: "generated-test-fixture.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(lines.join("\n")),
+  });
+  await page
+    .getByRole("button", { name: "Import BTS CSV locally", exact: true })
+    .click();
+  await expect(page.getByText(/Imported 640 BTS-schema rows/)).toBeVisible();
+  await page
+    .getByLabel("Training dataset", { exact: true })
+    .selectOption("bts");
+  await page
+    .getByRole("button", { name: "Train and evaluate model", exact: true })
+    .click();
+  await expect(
+    page.getByText("Model and measured validation report saved.", {
+      exact: true,
+    }),
+  ).toBeVisible({ timeout: 45000 });
+  await page.goto("/forecast");
+  await page.getByLabel("Trained model", { exact: true }).selectOption("bts");
+  await page
+    .getByRole("button", { name: "Predict departure delay", exact: true })
+    .click();
+  await expect(page.getByLabel("Prediction result")).toContainText(
+    "BTS IMPORT MODEL",
+  );
 });

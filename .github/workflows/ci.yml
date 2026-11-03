@@ -1,14 +1,23 @@
-name: Local application checks
+name: Distribution checks
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
     env:
       OMP_NUM_THREADS: "2"
       OPENBLAS_NUM_THREADS: "2"
+      LOKY_MAX_CPU_COUNT: "2"
+      VENV_PYTHON: ${{ matrix.os == 'windows-latest' && '.venv/Scripts/python.exe' || '.venv/bin/python' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,26 +28,38 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: python scripts/bootstrap.py
-      - run: .venv/bin/ruff check backend tests/backend scripts
-      - run: .venv/bin/python -m pytest -q
+      - run: python scripts/bootstrap.py --dev
+      - run: '"$VENV_PYTHON" -m ruff check backend tests/backend scripts'
+      - run: '"$VENV_PYTHON" -m pytest -q'
       - run: npm --prefix frontend test
-      - run: npm --prefix frontend run build
       - run: npx playwright install --with-deps chromium
+        if: runner.os == 'Linux'
         working-directory: frontend
-      - name: Start and verify application
+      - name: Production server and browser flows
+        if: runner.os == 'Linux'
         run: |
-          .venv/bin/python scripts/dev.py > /tmp/aerotwin.log 2>&1 &
+          "$VENV_PYTHON" scripts/serve.py > /tmp/aerotwin.log 2>&1 &
           APP_PID=$!
           trap 'kill "$APP_PID" || true' EXIT
-          for attempt in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8000/api/v1/health && curl -fsS http://127.0.0.1:5173/ > /dev/null; then break; fi
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:5188/api/v1/ready > /dev/null; then break; fi
             sleep 1
           done
-          .venv/bin/python scripts/verify.py
-          npm --prefix frontend run test:e2e
+          "$VENV_PYTHON" scripts/verify.py --base-url http://127.0.0.1:5188
+          AEROTWIN_URL=http://127.0.0.1:5188 npm --prefix frontend run test:e2e
+      - run: python scripts/package_release.py
+      - name: Test extracted ZIP bootstrap (compiled UI; no Node commands)
+        run: |
+          python -c "import zipfile; zipfile.ZipFile('releases/aerotwin-0.2.0.zip').extractall('work/release-smoke')"
+          cd work/release-smoke/aerotwin-0.2.0
+          python scripts/bootstrap.py
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Linux' && success()
+        with:
+          name: aerotwin-distribution
+          path: releases/*
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: browser-failures
+          name: diagnostics-${{ runner.os }}
           path: frontend/test-results

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, ArrowDownToLine } from "lucide-react";
 import { useApi } from "../api";
-import type { Mode, History, Summary } from "../types";
+import type { Mode, History, Summary, DatasetInfo } from "../types";
 import { Badge, State, Panel, Chart, num } from "../components/UI";
 export default function Historical({
   dataset,
@@ -11,6 +11,7 @@ export default function Historical({
   dataset: string;
   setMode: (m: Mode) => void;
 }) {
+  const info = useApi<DatasetInfo>("/data/datasets/" + dataset);
   const [search, setSearch] = useState("");
   const [origin, setOrigin] = useState("");
   const [start, setStart] = useState("");
@@ -23,6 +24,10 @@ export default function Historical({
     "/historical/flights?" + q + `&page=${page}&page_size=25`,
   );
   const s = useApi<Summary>("/historical/summary?dataset=" + dataset);
+  useEffect(() => {
+    if (info.data && origin && !info.data.origins.includes(origin))
+      setOrigin("");
+  }, [info.data, origin]);
   useEffect(() => setPage(1), [search, origin, start, end, dataset]);
   return (
     <>
@@ -44,7 +49,7 @@ export default function Historical({
             onChange={(e) => setOrigin(e.target.value)}
           >
             <option value="">All airports</option>
-            {["ATL", "JFK", "ORD", "LAX", "DFW"].map((a) => (
+            {(info.data?.origins ?? []).map((a) => (
               <option key={a}>{a}</option>
             ))}
           </select>

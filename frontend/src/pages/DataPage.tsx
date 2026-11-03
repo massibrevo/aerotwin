@@ -1,12 +1,19 @@
+import { useCallback } from "react";
+import DataOperations from "./DataOperations";
 import { useApi } from "../api";
 import type { Sources, Model } from "../types";
 import { Badge, State, Panel, num } from "../components/UI";
 export default function DataPage() {
   const r = useApi<Sources>("/data/sources");
   const m = useApi<Model[]>("/models");
+  const refresh = useCallback(() => {
+    r.reload();
+    m.reload();
+  }, [r.reload, m.reload]);
   return (
     <>
       <State error={r.error || m.error} />
+      <DataOperations onChange={refresh} />
       <Panel
         title="Source catalog"
         aside={
@@ -64,9 +71,9 @@ export default function DataPage() {
             <>
               <Badge tone="amber">NO REAL BTS DATA IMPORTED</Badge>
               <p className="muted">
-                Use the CLI to import official CSVs. Source checksum, duplicate
-                count, null coverage, cancellation flags and timezone mappings
-                are saved locally.
+                Import an official CSV above or use the CLI. Source checksum,
+                duplicate count, null coverage, cancellation flags and timezone
+                mappings are saved locally.
               </p>
               <pre>
                 python -m aerotwin.cli ingest-bts --input /path/to/bts.csv
@@ -94,7 +101,7 @@ export default function DataPage() {
           </details>
         ))}
       </Panel>
-      <Panel title="Simulation history · current server session">
+      <Panel title="Simulation history · persistent local ledger">
         {r.data?.simulation_history.length ? (
           r.data.simulation_history.map((s) => (
             <div className="integrity-row" key={s.id}>
@@ -106,7 +113,8 @@ export default function DataPage() {
           ))
         ) : (
           <p className="muted">
-            Run a scenario in the simulator to record a session experiment.
+            Run a scenario in the simulator to record a persistent local
+            experiment.
           </p>
         )}
       </Panel>

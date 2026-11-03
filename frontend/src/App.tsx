@@ -27,6 +27,7 @@ import Forecast from "./pages/Forecast";
 import Simulator from "./pages/Simulator";
 import DataPage from "./pages/DataPage";
 import About from "./pages/About";
+import Guide from "./pages/Guide";
 const nav = [
   ["/", "Control tower", Gauge],
   ["/radar", "Live radar", Radio],
@@ -36,6 +37,7 @@ const nav = [
   ["/network", "Disruption simulator", GitBranch],
   ["/data", "Data & experiments", Database],
   ["/about", "Methodology", BookOpen],
+  ["/guide", "Guida all’uso", BookOpen],
 ] as const;
 export default function App() {
   const [mode, setMode] = useState<Mode>("demo");
@@ -140,7 +142,7 @@ export default function App() {
             </div>
           </div>
           <div className="version">
-            AEROTWIN / v0.1.0 <span>RESEARCH</span>
+            AEROTWIN / v0.2.0 <span>RESEARCH</span>
           </div>
         </div>
       </aside>
@@ -237,6 +239,7 @@ export default function App() {
             <Route path="/network" element={<Simulator dataset={dataset} />} />
             <Route path="/data" element={<DataPage />} />
             <Route path="/about" element={<About />} />
+            <Route path="/guide" element={<Guide />} />
             <Route
               path="*"
               element={

@@ -1,8 +1,11 @@
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data"
-MODELS = ROOT / "models"
+VERSION = "0.2.0"
+STATE_ROOT = Path(os.environ.get("AEROTWIN_HOME", ROOT)).expanduser().resolve()
+DATA = STATE_ROOT / "data"
+MODELS = STATE_ROOT / "models"
 AIRPORTS = [
     {"iata": "BCN", "name": "Barcelona", "lat": 41.297, "lon": 2.078, "tz": "Europe/Madrid"},
     {"iata": "LHR", "name": "London", "lat": 51.470, "lon": -0.454, "tz": "Europe/London"},

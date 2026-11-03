@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const r = await fetch("/api/v1" + path, init);
+  let r: Response;
+  try {
+    r = await fetch("/api/v1" + path, init);
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw e;
+    throw new Error("Local server unreachable. Start AeroTwin and retry.");
+  }
+  const type = r.headers?.get("content-type") ?? "application/json";
+  if (!type.includes("application/json"))
+    throw new Error(
+      `Local server returned HTTP ${r.status}. Check that AeroTwin is running at this address.`,
+    );
   const data = await r.json();
   if (!r.ok)
     throw new Error(
@@ -24,17 +35,19 @@ export function useApi<T>(path: string) {
   const reload = useCallback(() => setRevision((x) => x + 1), []);
   useEffect(() => {
     let valid = true;
+    const controller = new AbortController();
     setData(undefined);
     setError("");
-    request<T>(path)
+    request<T>(path, { signal: controller.signal })
       .then((v) => {
         if (valid) setData(v);
       })
       .catch((e) => {
-        if (valid) setError(e.message);
+        if (valid && e.name !== "AbortError") setError(e.message);
       });
     return () => {
       valid = false;
+      controller.abort();
     };
   }, [path, revision]);
   return { data, error, reload };

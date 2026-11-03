@@ -1368,3 +1368,20 @@ progress {
 .map-svg > circle {
   pointer-events: none;
 }
+
+textarea {
+  font: inherit;
+  color: #dce8f2;
+  background: #0b1723;
+  border: 1px solid #2a3b4b;
+  border-radius: 5px;
+  padding: 10px;
+  resize: vertical;
+  width: 100%;
+}
+.guide-step {
+  counter-increment: steps;
+  border-left: 2px solid #48c7dd;
+  padding: 8px 20px;
+  margin: 22px 0;
+}

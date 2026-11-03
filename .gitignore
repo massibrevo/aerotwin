@@ -19,3 +19,9 @@ playwright-report/
 work/
 
 *.tsbuildinfo
+
+releases/
+
+# Optional state directories; prefer AEROTWIN_HOME outside the checkout.
+stato-locale/
+.aerotwin-state/

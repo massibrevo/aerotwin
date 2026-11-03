@@ -19,7 +19,7 @@ from fastapi.testclient import TestClient
 
 
 @pytest.fixture(scope="session", autouse=True)
-def prepared():
+def prepared(sandbox_data):
     store.generate()
     engine.train()
 
@@ -195,7 +195,7 @@ def test_simulation_pairing_reproducibility_and_service_capacity():
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return TestClient(app, base_url="http://127.0.0.1")
 
 
 @pytest.mark.parametrize(

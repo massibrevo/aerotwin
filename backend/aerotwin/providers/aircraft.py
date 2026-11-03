@@ -21,7 +21,7 @@ class Aircraft(BaseModel):
     altitude_ft: float | None = Field(default=None, ge=-2000, le=100000, allow_inf_nan=False)
     ground: bool = False
     track_deg: float | None = Field(default=None, ge=0, le=360, allow_inf_nan=False)
-    vertical_rate_fpm: float | None = None
+    vertical_rate_fpm: float | None = Field(default=None, allow_inf_nan=False)
     observed_at_utc: str
     received_at_utc: str
     provider: str
@@ -38,7 +38,9 @@ def parse_response(payload, received=None):
     for r in payload.get("ac", []):
         try:
             # seen_pos is the age of position, not the last transponder message.
-            age = float(r.get("seen_pos", r.get("seen", 0)))
+            age = float(r.get("seen_pos", r.get("seen")))
+            if not math.isfinite(age) or not 0 <= age <= 604800:
+                raise ValueError("Position age is missing or invalid")
             a = Aircraft(
                 icao24=r["hex"],
                 callsign=(r.get("flight") or "").strip() or None,
@@ -55,7 +57,7 @@ def parse_response(payload, received=None):
                 data_age_seconds=age,
             )
             rows.append(a.model_dump())
-        except (KeyError, TypeError, ValueError, ValidationError):
+        except (KeyError, TypeError, ValueError, AttributeError, OverflowError, ValidationError):
             rejected += 1
     return rows, rejected
 
@@ -87,7 +89,7 @@ class AdsbLolProvider:
                 async with httpx.AsyncClient(
                     timeout=10,
                     transport=self.transport,
-                    headers={"User-Agent": "AeroTwin/0.1 local aviation research"},
+                    headers={"User-Agent": "AeroTwin/0.2 local aviation research"},
                 ) as client:
                     response = await client.get(
                         f"https://api.adsb.lol/v2/lat/{lat}/lon/{lon}/dist/{radius_nm}"
