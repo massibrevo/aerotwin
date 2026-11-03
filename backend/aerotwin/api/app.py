@@ -14,13 +14,14 @@ from aerotwin.data.store import load, query, summary, ingest_bts, provenance, da
 from aerotwin.ml.engine import predict, reports, validated_model
 from aerotwin.analytics.comparison import compare
 from aerotwin.providers.details import AircraftDetails
+from aerotwin.providers.airports import search as airport_search, details as airport_reference, AirportWeather
 from aerotwin.providers.photos import AircraftPhotos
 from aerotwin.providers.aircraft import AdsbLolProvider, RecordedReplayProvider, SyntheticProvider
 from aerotwin.simulation.engine import network, simulate
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from aerotwin import jobs
+from aerotwin import jobs, recordings
 from aerotwin.storage import record, recent, get as stored_experiment
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
@@ -30,6 +31,7 @@ from starlette.concurrency import run_in_threadpool
 @asynccontextmanager
 async def lifespan(app):
     jobs.recover_interrupted()
+    recordings.recover()
     yield
 
 
@@ -72,12 +74,13 @@ async def local_boundary(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:5174"],
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type"],
 )
 live = AdsbLolProvider()
 photos = AircraftPhotos()
 reference_details = AircraftDetails()
+airport_weather = AirportWeather()
 
 
 @app.get("/api/v1/aircraft/{icao24}/photo")
@@ -149,10 +152,19 @@ async def aircraft(
     lon: float = Query(2.078, ge=-180, le=180),
     radius_nm: float = Query(100, ge=1, le=250),
     mode: Mode = "demo",
+    recording_id: str | None = Query(None, pattern="^[a-f0-9]{32}$"),
     frame: int = Query(0, ge=0, le=100000),
 ):
     if mode == "live":
-        return await live.snapshot(lat, lon, radius_nm)
+        data = await live.snapshot(lat, lon, radius_nm)
+        if recording_id:
+            data = {
+                **data,
+                "recording_state": await run_in_threadpool(
+                    recordings.capture, recording_id, data, lat, lon, radius_nm
+                ),
+            }
+        return data
     if mode == "replay":
         return RecordedReplayProvider().snapshot(frame)
     return SyntheticProvider().snapshot(lat, lon, radius_nm, frame)
@@ -194,7 +206,9 @@ async def stream(
     async def events():
         frame = 0
         while not await request.is_disconnected():
-            result = await aircraft(lat, lon, radius_nm, mode, frame)
+            result = await aircraft(
+                lat=lat, lon=lon, radius_nm=radius_nm, mode=mode, recording_id=None, frame=frame
+            )
             yield f"event: snapshot\ndata: {json.dumps(result)}\n\n"
             frame += 1
             await asyncio.sleep(30)
@@ -370,6 +384,24 @@ def sources():
                 "url": "https://www.transtats.bts.gov/",
             },
             {
+                "name": "OurAirports airport and runway references",
+                "class": "BUNDLED REFERENCE · NOT OPERATIONAL",
+                "license": "Public domain",
+                "url": "https://ourairports.com/data/",
+            },
+            {
+                "name": "OpenFlights timezone references",
+                "class": "BUNDLED REFERENCE · NOT OPERATIONAL",
+                "license": "ODbL; separate data licence included",
+                "url": "https://openflights.org/data.php",
+            },
+            {
+                "name": "NOAA Aviation Weather Center METAR",
+                "class": "OPTIONAL WEATHER OBSERVATION",
+                "license": "Provider/source terms; reports not bundled",
+                "url": "https://aviationweather.gov/data/api/",
+            },
+            {
                 "name": "Natural Earth",
                 "class": "OFFLINE BASEMAP",
                 "license": "Public domain",
@@ -463,3 +495,52 @@ def dataset_info(dataset: Dataset):
         "coverage": [str(frame.date.min()), str(frame.date.max())],
         "revision": dataset_revision(dataset),
     }
+
+
+class RecordingRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    label: str = Field(default="Observation session", min_length=1, max_length=80)
+    lat: float = Field(ge=-85, le=85, allow_inf_nan=False)
+    lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
+    radius_nm: float = Field(ge=1, le=250, allow_inf_nan=False)
+    retention_days: Literal[1, 7, 30] = 7
+
+
+@app.get("/api/v1/recordings")
+def recording_list():
+    return recordings.inventory()
+
+
+@app.post("/api/v1/recordings")
+def recording_start(body: RecordingRequest):
+    return recordings.start(**body.model_dump())
+
+
+@app.post("/api/v1/recordings/{key}/stop")
+def recording_stop(key: str):
+    return recordings.stop(key)
+
+
+@app.get("/api/v1/recordings/{key}/frames")
+def recording_frame(key: str, index: int = Query(0, ge=0, lt=recordings.MAX_FRAMES)):
+    return recordings.frame(key, index)
+
+
+@app.delete("/api/v1/recordings/{key}")
+def recording_delete(key: str):
+    return recordings.delete(key)
+
+
+@app.get("/api/v1/airports/search")
+def airport_lookup(query: str = Query("", max_length=100)):
+    return airport_search(query)
+
+
+@app.get("/api/v1/airports/{code}/reference")
+def airport_details(code: str):
+    return airport_reference(code)
+
+
+@app.get("/api/v1/airports/{code}/weather")
+async def airport_observations(code: str):
+    return await airport_weather.lookup(code)

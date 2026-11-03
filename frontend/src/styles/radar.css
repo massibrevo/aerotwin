@@ -2097,3 +2097,98 @@
   font-size: 10px;
   line-height: 1.6;
 }
+.recording-controls {
+  position: absolute;
+  right: 22px;
+  top: 105px;
+  z-index: 12;
+}
+.recording-controls > button {
+  font-size: 11px;
+}
+.recording-panel {
+  position: absolute;
+  right: 0;
+  top: 46px;
+  width: min(390px, calc(100vw - 100px));
+  max-height: 65vh;
+  padding: 18px;
+  overflow-y: auto;
+}
+.recording-panel p,
+.recording-panel small {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.recording-panel label {
+  margin: 8px 0;
+}
+.recording-panel button {
+  font-size: 11px;
+  margin: 4px 4px 4px 0;
+}
+.session-row {
+  border-top: 1px solid var(--border);
+  margin-top: 14px;
+  padding-top: 12px;
+}
+.session-row strong,
+.session-row small {
+  display: block;
+}
+.radar-motion {
+  position: absolute;
+  left: 360px;
+  bottom: 94px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--surface);
+  z-index: 6;
+  font-size: 10px;
+  box-shadow: var(--shadow);
+}
+.radar-motion label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+.radar-motion input {
+  width: 13px;
+  height: 13px;
+}
+.radar-motion small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+.map-density-note {
+  position: absolute;
+  bottom: 32px;
+  left: 10px;
+  max-width: 70%;
+  padding: 5px 9px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 10px;
+  z-index: 3;
+  border-radius: 6px;
+}
+@media (max-width: 700px) {
+  .recording-controls {
+    right: 12px;
+    top: 125px;
+  }
+  .recording-panel {
+    width: min(330px, calc(100vw - 80px));
+  }
+  .radar-motion {
+    left: 10px;
+    bottom: 100px;
+    max-width: 190px;
+  }
+}
+.recording-controls {
+  top: 175px;
+}

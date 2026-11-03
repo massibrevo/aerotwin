@@ -1,10 +1,10 @@
-# AeroTwin 0.4 — installazione, uso e interpretazione
+# AeroTwin 0.5 — installazione, uso e interpretazione
 
 AeroTwin è un'applicazione locale per osservare posizioni ADS-B, esplorare dati di programma dei voli, addestrare modelli temporali e confrontare scenari di coda. Questa distribuzione è pensata per una persona su un computer fidato, per ricerca, portfolio e didattica. La solidità tecnica dell'applicazione non equivale alla validazione aeronautica delle previsioni.
 
 ## 1. Installazione dalla distribuzione ZIP
 
-1. Scarica `aerotwin-0.4.0.zip` dalla release GitHub ed estrailo in una cartella scrivibile. Conserva tutti i file e le sottocartelle. Il relativo `.sha256` permette di controllare che il download sia integro; non è una firma digitale.
+1. Scarica `aerotwin-0.5.0.zip` dalla release GitHub ed estrailo in una cartella scrivibile. Conserva tutti i file e le sottocartelle. Il relativo `.sha256` permette di controllare che il download sia integro; non è una firma digitale.
 2. Installa Python **3.12 o 3.13**, con `pip` e `venv`. La prima preparazione scarica le librerie Python: serve Internet. La versione ZIP contiene già l'interfaccia compilata e non richiede Node.js per preparazione/esecuzione.
 3. Apri un terminale nella cartella estratta ed esegui:
 
@@ -130,7 +130,7 @@ Le snapshot e gli artefatti precedenti restano conservati: l'occupazione su disc
 - Mappe Natural Earth a bassa risoluzione e MapLibre non sono carte aeronautiche. Non usare l'app per navigazione.
 - Nessuna validazione/certificazione per dispatch, ATC o decisioni di sicurezza. Una CI verde dimostra i controlli software eseguiti, non l'accuratezza operativa dei modelli.
 
-Per formule e dettagli consulta `methodology.md`, `model-card.md`, `datasets-and-licenses.md` e `evaluation-v0.4.md`.
+Per formule e dettagli consulta `methodology.md`, `model-card.md`, `datasets-and-licenses.md` e `evaluation-v0.5.md`.
 
 
 ### Foto reali degli aeromobili
@@ -162,3 +162,16 @@ Apri **Analytics studio** e scegli il dataset storico. I periodi A e B devono es
 In **Forecast lab**, i modelli nuovamente addestrati mostrano errori residui, confronto con la mediana storica, bootstrap per intere date, copertura per aeroporto/compagnia e cambiamenti nella distribuzione degli input. La sensibilità del singolo caso ricalcola la previsione sostituendo una variabile alla volta con un riferimento del training: non spiega cause e i contributi non si sommano. Il bootstrap presuppone date scambiabili; Wilson presuppone indipendenza dei voli, spesso approssimativa. Intervalli e copertura non sono garanzie.
 
 I vecchi modelli funzionano ancora: usa **Data & experiments → Train and evaluate model** sul dataset scelto per ottenere le nuove diagnostiche. Il modello sintetico non misura abilità previsionale sul traffico reale. Per questa valutazione importa dati BTS autentici e controlla separatamente qualità, copertura temporale e baseline. Dettagli: [metodologia 0.4](intelligence-v0.4.md).
+
+
+## Novità 0.5: radar, registrazioni, aeroporti e formule
+
+Il radar online usa simboli GPU oltre 250 aerei; la lista mostra 200 righe per volta con un pulsante per le successive. La mappa offline disegna al massimo 500 posizioni con avviso, senza troncare i dati della lista. **Animate updates**, disattivo inizialmente, interpola solo la visualizzazione tra coordinate ricevute per piccoli gruppi online: non prevede posizioni e non modifica dati registrati o analitici.
+
+In **Live ADS-B → Record / sessions**, scegli nome e conservazione (1/7/30 giorni) e premi **Start local LIVE recording**. Limiti: 20 sessioni, 1.000 fotografie di osservazioni per sessione, 50 MiB di payload compressi totali; SQLite aggiunge un overhead. La raccolta richiede app aperta e visibile: non esiste un servizio in background. La testata mostra **LIVE · REC**. Cambio modalità/regione e riavvio del server chiudono la raccolta; un browser abbandonato non continua a scaricare dati. Nessun dato sintetico viene accettato come registrazione reale.
+
+Ferma la sessione e scegli **Replay observations**. I dati hanno badge **RECORDED · NOT LIVE**, tempi originali e velocità espressa in fotogrammi al secondo, non tempo reale. Il replay si arresta sull’ultimo fotogramma. Le foto e i metadati live non vengono richiesti durante il replay. **Delete recording** richiede la conferma esplicita della cancellazione definitiva. Le sessioni scadute vengono eliminate al successivo accesso ai dati, non tramite un demone quando il server è spento. I record restano sul computer e sono esclusi da Git/release.
+
+In **Airport explorer**, cerca codice, aeroporto o città. I 6.146 riferimenti comprendono aeroporti grandi/medi e piccoli con servizio di linea: non ogni aviosuperficie privata. Piste e flag provengono da OurAirports e non indicano disponibilità attuale/NOTAM. L’orario locale usa il fuso IANA disponibile (riferimento OpenFlights/ODbL); senza fuso resta sconosciuto. I METAR NOAA/NWS mostrano istante UTC, età e testo originale; oltre due ore sono marcati vecchi. Mancanza del dato non genera meteo sintetico. Il meteo non entra nel modello storico T−120.
+
+Le formule sono nella pagina **Mathematical methods**, raggiungibile da Analytics studio, Forecast lab e Methodology, e nell’[appendice matematica completa](mathematical-methods.md): medie, quantili, denominatori, standardizzazione dei gruppi, embargo temporale, MAE/RMSE/bias, intervalli residui, Wilson, bootstrap per data, shift degli input, sensibilità, centralità di rete e simulazione di coda. Le ipotesi e i limiti sono espliciti. [Dettagli 0.5](radar-airports-v0.5.md).

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { saveJson } from "../features/analytics/export";
 import { useEffect, useState } from "react";
 import { useApi } from "../api";
@@ -91,6 +92,9 @@ export default function Analytics({ dataset }: { dataset: string }) {
           </Badge>
         }
       >
+        <p>
+          <Link to="/math">Math formulas and assumptions →</Link>
+        </p>
         <p className="muted">
           Compare earlier period A with later period B. Default windows split
           the dataset's distinct schedule dates in half. These statistics

@@ -25,3 +25,8 @@ Optional live-card thumbnails come from the [Planespotters.net Photo API](https:
 ## Aircraft metadata references (0.4)
 
 Optional HexDB identity and callsign-route references use its documented keyless public API: https://hexdb.io/. Provider/source terms apply. No blanket open-data licence is assumed and no metadata mirror is bundled. Registered ownership does not establish the current operator; route records are explicitly unverified for a live observation and show their source update dates. Only short-lived, bounded memory caching is used. Selected public hex/callsign identifiers are sent to the source.
+
+
+## Airport/runway and timezone reference (0.5)
+
+Bundled airport/runway fields are an OurAirports public-domain snapshot (https://ourairports.com/data/). The separate IANA timezone mapping is derived from OpenFlights.org contributors under ODbL 1.0 (https://github.com/jpatokal/openflights/tree/master/data); its licence is bundled at `backend/aerotwin/data/reference/OpenFlights-ODbL.txt`. The derived mapping is made available under ODbL. Source URLs, build time and original-file SHA-256 digests accompany the airport reference. Reference data is not warranted for current operational use. Optional NOAA/NWS AWC METAR observations are fetched at runtime, not bundled. Local recordings retain their ADSB.lol/ODbL source attribution and stay outside the repository and release archive.

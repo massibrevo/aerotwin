@@ -14,6 +14,8 @@ ROUTES = [
     "/history",
     "/forecast",
     "/analytics",
+    "/airports",
+    "/math",
     "/network",
     "/data",
     "/about",

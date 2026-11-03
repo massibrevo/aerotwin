@@ -5,6 +5,7 @@ import { Command } from "cmdk";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import {
   Search,
+  Plane,
   ArrowUpRight,
   Gauge,
   Radio,
@@ -38,6 +39,20 @@ export function Tip({
   );
 }
 export const sections = [
+  {
+    path: "/airports",
+    label: "Airport explorer",
+    description: "Airport reference, runways, local time and METAR",
+    icon: Plane,
+    color: "cyan",
+  },
+  {
+    path: "/math",
+    label: "Mathematical methods",
+    description: "Formulas, estimators, denominators and assumptions",
+    icon: BookOpen,
+    color: "slate",
+  },
   {
     path: "/analytics",
     label: "Analytics studio",

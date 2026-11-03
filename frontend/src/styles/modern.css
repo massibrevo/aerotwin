@@ -1496,3 +1496,77 @@ footer {
   color: var(--text-muted);
   font-size: 11px;
 }
+.airport-search-form {
+  display: flex;
+  gap: 12px;
+}
+.airport-search-form input {
+  min-width: 0;
+  flex: 1;
+}
+.airport-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.airport-results button {
+  display: flex;
+  text-align: left;
+  align-items: center;
+  gap: 12px;
+}
+.airport-results button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.airport-results span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.airport-results small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.weather-values > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.weather-values dd {
+  margin: 0;
+  text-align: right;
+}
+.metar-raw,
+.math-equation {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.runway-heading {
+  display: block;
+  margin-top: 4px;
+}
+.sidebar nav {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+@media (max-width: 650px) {
+  .airport-search-form {
+    flex-wrap: wrap;
+  }
+  .airport-results {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .math-equation {
+    font-size: 11px;
+  }
+}

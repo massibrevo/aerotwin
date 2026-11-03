@@ -41,7 +41,23 @@ export function visibleLabels(
   points: { id: string; x: number; y: number; text: string }[],
   selected?: string,
 ) {
-  const boxes: { x: number; y: number; width: number; height: number }[] = [];
+  type Box = { x: number; y: number; width: number; height: number };
+  const grid = new Map<string, Box[]>();
+  const cells = (b: Box) => {
+    const keys: string[] = [];
+    for (
+      let x = Math.floor(b.x / 64);
+      x <= Math.floor((b.x + b.width) / 64);
+      x++
+    )
+      for (
+        let y = Math.floor(b.y / 64);
+        y <= Math.floor((b.y + b.height) / 64);
+        y++
+      )
+        keys.push(`${x}:${y}`);
+    return keys;
+  };
   const visible = new Set<string>();
   const ordered = [...points].sort(
     (a, b) => Number(b.id === selected) - Number(a.id === selected),
@@ -53,7 +69,9 @@ export function visibleLabels(
       width: Math.min(105, p.text.length * 6.4 + 16),
       height: 26,
     };
-    const overlaps = boxes.some(
+    const keys = cells(box);
+    const neighbours = new Set(keys.flatMap((key) => grid.get(key) ?? []));
+    const overlaps = [...neighbours].some(
       (b) =>
         box.x < b.x + b.width &&
         box.x + box.width > b.x &&
@@ -61,7 +79,7 @@ export function visibleLabels(
         box.y + box.height > b.y,
     );
     if (p.id === selected || !overlaps) {
-      boxes.push(box);
+      for (const key of keys) grid.set(key, [...(grid.get(key) ?? []), box]);
       visible.add(p.id);
     }
   }

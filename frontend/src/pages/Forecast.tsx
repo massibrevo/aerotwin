@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { saveJson } from "../features/analytics/export";
 import ModelDiagnostics from "../features/analytics/ModelDiagnostics";
 import { useUnits } from "../units";
@@ -49,6 +50,9 @@ export default function Forecast() {
   const [busy, setBusy] = useState(false);
   return (
     <>
+      <p>
+        <Link to="/math">Math formulas and assumptions →</Link>
+      </p>
       <State error={r.error} />
       <div className="controls-bar">
         <label>

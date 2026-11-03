@@ -79,7 +79,9 @@ export default function AircraftPhoto({
               ? "Finding aircraft photo…"
               : eligible
                 ? "Aircraft photo unavailable"
-                : "No real photo for synthetic / replay aircraft"}
+                : aircraft.provider === "ADSB.lol"
+                  ? "Photo lookup disabled during recorded playback"
+                  : "No real photo for synthetic / replay aircraft"}
           </span>
         </div>
       )}

@@ -1,5 +1,7 @@
 # Methodology: learning from schedules, testing assumptions
 
+[Complete mathematical appendix: formulas, units, denominators and assumptions](mathematical-methods.md). The in-app **Mathematical methods** page links to this source.
+
 ## Target and issuance
 
 For each scheduled US domestic flight, predict departure delay y (minutes, possibly negative for early departure) at scheduled UTC −120min. Local scheduled times use origin IANA zones; `2400` rolls to next-day midnight. Unknown zones and DST ambiguity/nonexistence fail instead of inventing an instant.

@@ -1,3 +1,4 @@
+import RecordingControls from "../features/radar/RecordingControls";
 import { useFavourites } from "../features/radar/favourites";
 import LiveLookup from "../features/radar/LiveLookup";
 import AircraftDetails from "../features/radar/AircraftDetails";
@@ -38,6 +39,8 @@ import { useObservedTrail } from "../features/radar/useObservedTrail";
 export default function Radar(p: RadarProps) {
   const u = useUnits();
   const favourites = useFavourites();
+  const [animateUpdates, setAnimateUpdates] = useState(false);
+  const [rowLimit, setRowLimit] = useState(200);
   const [savedOnly, setSavedOnly] = useState(false);
   const [search, setSearch] = useState("");
   const [minAlt, setMinAlt] = useState(0);
@@ -78,7 +81,7 @@ export default function Radar(p: RadarProps) {
   const activeFilters =
     Number(minAlt > 0) + Number(maxAlt < 45000) + Number(minSpeed > 0);
   const region = p.mode === "replay" ? presets[0] : p.region;
-  const context = `${p.mode}:${region.lat}:${region.lon}:${p.radius}`;
+  const context = `${p.mode}:${p.recordedSession?.id ?? ""}:${region.lat}:${region.lon}:${p.radius}`;
   const trail = useObservedTrail(p.snapshot, picked?.icao24, context);
   useEffect(() => {
     setFollow(false);
@@ -118,10 +121,13 @@ export default function Radar(p: RadarProps) {
             ? "Stale observations"
             : "Live observations"
           : "Feed unavailable"
-      : p.mode === "replay"
-        ? "Synthetic recording"
-        : "Synthetic aircraft";
+      : p.mode === "recorded"
+        ? "Recorded ADS-B · not LIVE"
+        : p.mode === "replay"
+          ? "Synthetic recording"
+          : "Synthetic aircraft";
   const changeMode = (m: Mode) => {
+    p.setFrame(0);
     p.setMode(m);
     setFollow(false);
   };
@@ -143,7 +149,9 @@ export default function Radar(p: RadarProps) {
         labels={labels}
         coverage={coverage}
         recenter={recenter}
+        animateUpdates={animateUpdates}
       />
+      <RecordingControls {...p} />
       <div className="radar-top-controls">
         <div className="radar-location">
           <span className="location-icon">
@@ -154,7 +162,7 @@ export default function Radar(p: RadarProps) {
             <select
               aria-label="Radar region"
               value={p.region.iata}
-              disabled={p.mode === "replay"}
+              disabled={p.mode === "replay" || p.mode === "recorded"}
               onChange={(e) => {
                 const r = presets.find((r) => r.iata === e.target.value);
                 if (r) p.setRegion(r);
@@ -175,6 +183,7 @@ export default function Radar(p: RadarProps) {
             <small>{u.label("distance")}</small>
           </span>
           <button
+            disabled={p.mode === "recorded"}
             aria-label="Custom region"
             title="Custom geography"
             onClick={() => setCustom(!custom)}
@@ -359,21 +368,40 @@ export default function Radar(p: RadarProps) {
                 </div>
                 <div className="favourite-action">
                   <button
-                    aria-pressed={favourites.has(picked, p.mode)}
+                    aria-pressed={favourites.has(
+                      picked,
+                      p.mode === "recorded" ? "live" : p.mode,
+                    )}
                     aria-label={
-                      favourites.has(picked, p.mode)
+                      favourites.has(
+                        picked,
+                        p.mode === "recorded" ? "live" : p.mode,
+                      )
                         ? "Remove aircraft from favourites"
                         : "Save aircraft to favourites"
                     }
-                    onClick={() => favourites.toggle(picked, p.mode)}
+                    onClick={() =>
+                      favourites.toggle(
+                        picked,
+                        p.mode === "recorded" ? "live" : p.mode,
+                      )
+                    }
                   >
                     <Star
                       size={16}
                       fill={
-                        favourites.has(picked, p.mode) ? "currentColor" : "none"
+                        favourites.has(
+                          picked,
+                          p.mode === "recorded" ? "live" : p.mode,
+                        )
+                          ? "currentColor"
+                          : "none"
                       }
                     />
-                    {favourites.has(picked, p.mode)
+                    {favourites.has(
+                      picked,
+                      p.mode === "recorded" ? "live" : p.mode,
+                    )
                       ? "Saved aircraft"
                       : "Save aircraft"}
                   </button>
@@ -695,7 +723,7 @@ export default function Radar(p: RadarProps) {
                       <span>ALTITUDE / SPEED</span>
                     </div>
                     <div className="aircraft-scroll">
-                      {rows.map((a) => (
+                      {rows.slice(0, rowLimit).map((a) => (
                         <button
                           key={a.icao24}
                           className="aircraft-row"
@@ -734,6 +762,15 @@ export default function Radar(p: RadarProps) {
                           </span>
                         </button>
                       ))}
+                      {rows.length > rowLimit && (
+                        <button
+                          className="wide"
+                          onClick={() => setRowLimit((n) => n + 200)}
+                        >
+                          Show next 200 aircraft ({rows.length - rowLimit}{" "}
+                          remaining)
+                        </button>
+                      )}
                       {!rows.length && (
                         <div className="traffic-empty">
                           <Search size={24} />
@@ -792,15 +829,40 @@ export default function Radar(p: RadarProps) {
         <div className="radar-alert" role="alert">
           <Info size={19} />
           <div>
-            <strong>Live data is unavailable</strong>
+            <strong>
+              {p.mode === "recorded"
+                ? "Recorded frame unavailable"
+                : "Live data is unavailable"}
+            </strong>
             <p>{p.radarError || p.snapshot?.error}</p>
           </div>
         </div>
       )}
+      <div className="radar-motion">
+        <label>
+          <input
+            type="checkbox"
+            checked={animateUpdates}
+            onChange={(e) => setAnimateUpdates(e.target.checked)}
+          />
+          Animate updates
+        </label>
+        <small>
+          Visual transition only · online, ≤250 aircraft · no extrapolation
+        </small>
+      </div>
       <div className={`radar-playback ${p.mode === "live" ? "is-live" : ""}`}>
         <button
           className="playback-play"
-          aria-label={p.paused ? "Resume polling" : "Pause polling"}
+          aria-label={
+            p.mode === "recorded"
+              ? p.paused
+                ? "Play recorded session"
+                : "Pause recorded playback"
+              : p.paused
+                ? "Resume polling"
+                : "Pause polling"
+          }
           title={
             p.paused ? "Resume automatic refresh" : "Pause automatic refresh"
           }
@@ -810,7 +872,11 @@ export default function Radar(p: RadarProps) {
         </button>
         <div className="playback-time">
           <span>
-            {p.mode === "live" ? "OBSERVATION TIME" : "SYNTHETIC / FIXED EPOCH"}
+            {p.mode === "live"
+              ? "OBSERVATION TIME"
+              : p.mode === "recorded"
+                ? "RECORDED / NOT LIVE"
+                : "SYNTHETIC / FIXED EPOCH"}
           </span>
           <strong>
             {p.snapshot?.received_at
@@ -822,13 +888,22 @@ export default function Radar(p: RadarProps) {
         {p.mode !== "live" ? (
           <>
             <label className="playback-timeline">
-              <span>Frame {p.frame % 20} / 19</span>
+              <span>
+                Frame {p.mode === "recorded" ? p.frame : p.frame % 20} /{" "}
+                {p.mode === "recorded"
+                  ? (p.recordedSession?.frames ?? 1) - 1
+                  : 19}
+              </span>
               <input
                 aria-label="Replay frame"
                 type="range"
                 min="0"
-                max="19"
-                value={p.frame % 20}
+                max={
+                  p.mode === "recorded"
+                    ? Math.max(0, (p.recordedSession?.frames ?? 1) - 1)
+                    : 19
+                }
+                value={p.mode === "recorded" ? p.frame : p.frame % 20}
                 onChange={(e) => p.setFrame(+e.target.value)}
               />
             </label>
@@ -836,7 +911,16 @@ export default function Radar(p: RadarProps) {
               className="next-frame"
               aria-label="Next frame"
               title="Next observation"
-              onClick={() => p.setFrame((p.frame + 1) % 20)}
+              onClick={() =>
+                p.setFrame(
+                  p.mode === "recorded"
+                    ? Math.min(
+                        p.frame + 1,
+                        (p.recordedSession?.frames ?? 1) - 1,
+                      )
+                    : (p.frame + 1) % 20,
+                )
+              }
             >
               <ChevronRight size={19} />
             </button>
@@ -853,7 +937,20 @@ export default function Radar(p: RadarProps) {
             </span>
           </div>
         )}
-        <label className="refresh-cadence">
+        {p.mode === "recorded" && (
+          <label className="refresh-cadence">
+            <select
+              aria-label="Recorded playback speed"
+              value={p.replayMs}
+              onChange={(e) => p.setReplayMs(+e.target.value)}
+            >
+              <option value={2000}>0.5 frames/s</option>
+              <option value={1000}>1 frame/s</option>
+              <option value={500}>2 frames/s</option>
+            </select>
+          </label>
+        )}
+        <label className="refresh-cadence" hidden={p.mode === "recorded"}>
           <select
             aria-label="Refresh interval"
             value={p.refresh}

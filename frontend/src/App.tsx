@@ -1,3 +1,5 @@
+import Airports from "./pages/Airports";
+import MathMethods from "./pages/MathMethods";
 import { memo, useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { NavLink, Link, Route, Routes, useLocation } from "react-router-dom";
 import {
@@ -14,11 +16,19 @@ import {
   Radio,
   ShieldCheck,
   ArrowRight,
+  MapPin,
 } from "lucide-react";
-import { request, useApi } from "./api";
+import { request, useApi, post } from "./api";
 import { Badge } from "./components/UI";
 import { presets } from "./presets";
-import type { Mode, Airport, Aircraft, Snapshot, Summary } from "./types";
+import type {
+  Mode,
+  Airport,
+  Aircraft,
+  Snapshot,
+  Summary,
+  RecordedSession,
+} from "./types";
 import OverviewView from "./pages/Overview";
 import RadarView from "./pages/Radar";
 import PulseView from "./pages/Pulse";
@@ -48,6 +58,7 @@ const nav = [
   ["/history", "Historical explorer", Layers],
   ["/forecast", "Forecast lab", FlaskConical],
   ["/analytics", "Analytics studio", Activity],
+  ["/airports", "Airport explorer", MapPin],
   ["/network", "Disruption simulator", GitBranch],
   ["/data", "Data & experiments", Database],
   ["/about", "Methodology", BookOpen],
@@ -61,6 +72,13 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("aerotwin:theme", theme);
   }, [theme]);
+  const [recordingNotice, setRecordingNotice] = useState("");
+  const [recording, setRecording] = useState<{
+    id: string;
+    queryKey: string;
+  }>();
+  const [recordedSession, setRecordedSession] = useState<RecordedSession>();
+  const [replayMs, setReplayMs] = useState(1000);
   const [mode, setMode] = useState<Mode>("demo");
   const [region, setRegion] = useState<Airport>(presets[0]);
   const [radius, setRadius] = useState(100);
@@ -85,10 +103,11 @@ export default function App() {
   useEffect(() => {
     setRadarError("");
     const abort = new AbortController();
-    request<Snapshot>(
-      `/aircraft?mode=${mode}&lat=${region.lat}&lon=${region.lon}&radius_nm=${radius}&frame=${frame}`,
-      { signal: abort.signal },
-    )
+    const path =
+      mode === "recorded" && recordedSession
+        ? `/recordings/${recordedSession.id}/frames?index=${frame}`
+        : `/aircraft?mode=${mode}&lat=${region.lat}&lon=${region.lon}&radius_nm=${radius}&frame=${frame}${recording && mode === "live" ? `&recording_id=${recording.id}` : ""}`;
+    request<Snapshot>(path, { signal: abort.signal })
       .then((data) => {
         if (!abort.signal.aborted)
           setSnapshot({
@@ -100,20 +119,22 @@ export default function App() {
         if (e.name !== "AbortError") setRadarError(e.message);
       });
     return () => abort.abort();
-  }, [mode, region, radius, frame, reload]);
+  }, [mode, region, radius, frame, reload, recording, recordedSession]);
   useEffect(() => {
     if (paused) return;
     const id = setInterval(
       () => {
         if (!document.hidden) {
           if (mode === "live") setReload((v) => v + 1);
+          else if (mode === "recorded" && recordedSession)
+            setFrame((f) => Math.min(f + 1, recordedSession.frames - 1));
           else setFrame((f) => (f + 1) % 20);
         }
       },
-      Math.max(30, refresh) * 1000,
+      mode === "recorded" ? replayMs : Math.max(30, refresh) * 1000,
     );
     return () => clearInterval(id);
-  }, [mode, refresh, paused]);
+  }, [mode, refresh, paused, replayMs, recordedSession]);
   useEffect(() => {
     const id = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(id);
@@ -122,6 +143,61 @@ export default function App() {
     mode === "live" && snapshot?.received_at
       ? Math.max(0, (tick - Date.parse(snapshot.received_at)) / 1000)
       : null;
+  const stopRecording = useCallback(async () => {
+    const key = recording?.id;
+    setRecording(undefined);
+    if (key) await post(`/recordings/${key}/stop`, {});
+  }, [recording]);
+  const startRecording = useCallback(
+    async (label: string, days: number) => {
+      if (mode !== "live") throw new Error("Select Live ADS-B first");
+      const created = await post<{ id: string }>("/recordings", {
+        label,
+        lat: region.lat,
+        lon: region.lon,
+        radius_nm: radius,
+        retention_days: days,
+      });
+      setRecordingNotice("");
+      setRecording({
+        id: created.id,
+        queryKey: `${region.lat}:${region.lon}:${radius}`,
+      });
+      setPaused(false);
+    },
+    [mode, region, radius],
+  );
+  useEffect(() => {
+    if (
+      recording &&
+      (mode !== "live" ||
+        recording.queryKey !== `${region.lat}:${region.lon}:${radius}`)
+    ) {
+      void stopRecording().catch(() => {});
+    }
+  }, [mode, region.lat, region.lon, radius, recording, stopRecording]);
+  useEffect(() => {
+    if (recording && snapshot?.recording_state?.status === "stopped") {
+      setRecording(undefined);
+      setRecordingNotice(
+        snapshot.recording_state.reason ?? "Recording stopped",
+      );
+    }
+  }, [snapshot, recording]);
+  const playRecording = useCallback((session: RecordedSession) => {
+    setRecordedSession(session);
+    setFrame(0);
+    setPaused(true);
+    setMode("recorded");
+    setRegion({
+      iata: "CUSTOM",
+      name: session.label,
+      lat: session.query.lat,
+      lon: session.query.lon,
+      tz: "UTC",
+    });
+    setRadius(session.query.radius_nm);
+  }, []);
   const locateAircraft = useCallback((a: Aircraft) => {
     setFocusError("");
     setPendingFocus(a.icao24.toLowerCase());
@@ -155,7 +231,19 @@ export default function App() {
       );
     setPendingFocus(undefined);
   }, [pendingFocus, snapshot, mode, region.lat, region.lon, radius]);
-  const title = nav.find((n) => n[0] === location.pathname)?.[1] ?? "AeroTwin";
+  useEffect(() => {
+    if (
+      !paused &&
+      mode === "recorded" &&
+      recordedSession &&
+      frame >= recordedSession.frames - 1
+    )
+      setPaused(true);
+  }, [mode, recordedSession, frame, paused]);
+  const title =
+    location.pathname === "/math"
+      ? "Mathematical methods"
+      : (nav.find((n) => n[0] === location.pathname)?.[1] ?? "AeroTwin");
   const refreshNow = useCallback(() => setReload((v) => v + 1), []);
   const props = {
     mode,
@@ -176,6 +264,21 @@ export default function App() {
     setPaused,
     age,
     refreshNow,
+    recordingId: recording?.id,
+    recordingNotice,
+    onRecordingDeleted: (key: string) => {
+      if (recordedSession?.id === key) {
+        setRecordedSession(undefined);
+        setMode("demo");
+        setFrame(0);
+      }
+    },
+    recordedSession,
+    replayMs,
+    setReplayMs,
+    startRecording,
+    stopRecording,
+    playRecording,
     locateAircraft,
     focusError,
   };
@@ -220,7 +323,7 @@ export default function App() {
             </div>
           </div>
           <div className="version">
-            AEROTWIN / v0.4.0 <span>RESEARCH</span>
+            AEROTWIN / v0.5.0 <span>RESEARCH</span>
           </div>
         </div>
       </aside>
@@ -243,13 +346,17 @@ export default function App() {
             <Badge tone={mode === "live" ? "cyan" : "amber"}>
               {mode === "demo"
                 ? "SYNTHETIC DEMO"
-                : mode === "replay"
-                  ? "REPLAY · SYNTHETIC"
-                  : snapshot?.status === "live" && !radarError
-                    ? "LIVE"
-                    : snapshot || radarError
-                      ? "LIVE UNAVAILABLE"
-                      : "CONNECTING"}
+                : mode === "recorded"
+                  ? "RECORDED · NOT LIVE"
+                  : mode === "replay"
+                    ? "REPLAY · SYNTHETIC"
+                    : snapshot?.status === "live" && !radarError
+                      ? recording
+                        ? "LIVE · REC"
+                        : "LIVE"
+                      : snapshot || radarError
+                        ? "LIVE UNAVAILABLE"
+                        : "CONNECTING"}
             </Badge>
             <div className="avatar">AT</div>
           </div>
@@ -294,9 +401,11 @@ export default function App() {
             <span>
               {mode === "demo"
                 ? `Offline workspace · Aircraft are synthetic examples. Historical dataset: ${dataset === "synthetic" ? "synthetic examples" : "imported BTS"}.`
-                : mode === "replay"
-                  ? "Replay · Bundled synthetic BCN snapshots recorded at a fixed example epoch."
-                  : "Live ADS-B · Community observations in queried coverage; no verified routes or delay information."}
+                : mode === "recorded"
+                  ? "Recorded ADS-B observations · historic capture times, not LIVE. Frame replay speed is not real time."
+                  : mode === "replay"
+                    ? "Replay · Bundled synthetic BCN snapshots recorded at a fixed example epoch."
+                    : "Live ADS-B · Community observations in queried coverage; no verified routes or delay information."}
             </span>
             <Link to="/about">
               Read methodology <ArrowRight size={13} />
@@ -338,6 +447,8 @@ export default function App() {
                 path="/network"
                 element={<Simulator dataset={dataset} />}
               />
+              <Route path="/airports" element={<Airports />} />
+              <Route path="/math" element={<MathMethods />} />
               <Route path="/data" element={<DataPage />} />
               <Route path="/about" element={<About />} />
               <Route path="/guide" element={<Guide />} />

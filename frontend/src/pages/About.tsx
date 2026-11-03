@@ -1,8 +1,14 @@
+import { Link } from "react-router-dom";
 import { Radio, Layers, FlaskConical, GitBranch } from "lucide-react";
 import { Panel } from "../components/UI";
 export default function About() {
   return (
     <div className="methodology">
+      <p>
+        <Link to="/math">
+          Mathematical appendix: formulas and assumptions →
+        </Link>
+      </p>
       <Panel title="A transparent twin, built for learning">
         <p>
           AeroTwin connects observations, schedule analytics, temporal machine

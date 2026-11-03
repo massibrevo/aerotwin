@@ -1,5 +1,5 @@
 import type { Diagnostics } from "./features/analytics/ModelDiagnostics";
-export type Mode = "demo" | "live" | "replay";
+export type Mode = "demo" | "live" | "replay" | "recorded";
 export interface Airport {
   iata: string;
   name: string;
@@ -24,7 +24,19 @@ export interface Aircraft {
   provider: string;
   data_age_seconds: number;
 }
+export interface RecordedSession {
+  id: string;
+  label: string;
+  created_at: string;
+  expires_at: string;
+  active: boolean;
+  frames: number;
+  bytes: number;
+  stop_reason: string | null;
+  query: { lat: number; lon: number; radius_nm: number };
+}
 export interface Snapshot {
+  recording_state?: { status: string; reason?: string };
   query_key?: string;
   mode: Mode;
   status: string;
@@ -193,6 +205,15 @@ export type RadarProps = {
   setPaused: (v: boolean) => void;
   age: number | null;
   refreshNow: () => void;
+  recordingId?: string;
+  recordingNotice?: string;
+  onRecordingDeleted: (key: string) => void;
+  recordedSession?: RecordedSession;
+  replayMs: number;
+  setReplayMs: (ms: number) => void;
+  startRecording: (label: string, days: number) => Promise<void>;
+  stopRecording: () => Promise<void>;
+  playRecording: (session: RecordedSession) => void;
   locateAircraft: (a: Aircraft) => void;
   focusError?: string;
 };

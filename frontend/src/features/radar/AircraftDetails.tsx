@@ -54,7 +54,9 @@ export default function AircraftDetails({
   if (!eligible)
     return (
       <p className="reference-note">
-        Synthetic aircraft · no real identity or route lookup.
+        {aircraft.provider === "ADSB.lol"
+          ? "Recorded observation · no live metadata request."
+          : "Synthetic aircraft · no real identity or route lookup."}
       </p>
     );
   const conflict =

@@ -1,3 +1,8 @@
+import {
+  addFleetLayers,
+  fleetFeatures,
+  wrappedLongitudeDelta,
+} from "./features/radar/denseFleet";
 import { useUnits } from "./units";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { geoMercator, geoPath, geoGraticule10 } from "d3-geo";
@@ -34,6 +39,7 @@ type Props = {
   labels?: boolean;
   coverage?: boolean;
   recenter?: number;
+  animateUpdates?: boolean;
 };
 function RadarMap({
   aircraft,
@@ -47,8 +53,15 @@ function RadarMap({
   labels = true,
   coverage = true,
   recenter = 0,
+  animateUpdates = false,
 }: Props) {
   const u = useUnits();
+  const offlineAircraft = useMemo(() => {
+    const rows = aircraft.slice(0, 500);
+    const picked = aircraft.find((a) => a.icao24 === selected);
+    if (picked && !rows.includes(picked)) rows[rows.length - 1] = picked;
+    return rows;
+  }, [aircraft, selected]);
   const [world, setWorld] = useState<FeatureCollection>();
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState([0, 0]);
@@ -123,7 +136,7 @@ function RadarMap({
   const offlineLabels = useMemo(
     () =>
       visibleLabels(
-        aircraft.map((a) => {
+        offlineAircraft.map((a) => {
           const p = projection([a.lon, clampLatitude(a.lat)]) ?? [0, 0];
           return {
             id: a.icao24,
@@ -134,7 +147,7 @@ function RadarMap({
         }),
         selected,
       ),
-    [aircraft, projection, selected],
+    [offlineAircraft, projection, selected],
   );
   const draw = geoPath(projection);
   const reset = () => {
@@ -238,6 +251,17 @@ function RadarMap({
         source: "observed-trail",
         paint: { "line-color": "#047cba", "line-width": 3 },
       });
+      addFleetLayers(m);
+      m.on("click", "fleet-planes", (e) => {
+        const id = e.features?.[0]?.properties?.id;
+        const current = live.current.aircraft.find((a) => a.icao24 === id);
+        if (current) live.current.onSelect(current);
+      });
+      m.on("click", "fleet-selected", (e) => {
+        const id = e.features?.[0]?.properties?.id;
+        const current = live.current.aircraft.find((a) => a.icao24 === id);
+        if (current) live.current.onSelect(current);
+      });
       const delta = v.radius / 60,
         cos = Math.max(0.1, Math.cos((v.region.lat * Math.PI) / 180));
       m.fitBounds(
@@ -268,6 +292,27 @@ function RadarMap({
   useEffect(() => {
     const m = map.current;
     if (!m || !loaded) return;
+    const dense = aircraft.length > 250;
+    (m.getSource("fleet") as maplibregl.GeoJSONSource)?.setData(
+      fleetFeatures(dense ? aircraft : [], selected),
+    );
+    if (m.getLayer("fleet-labels"))
+      m.setLayoutProperty(
+        "fleet-labels",
+        "visibility",
+        dense && labels ? "visible" : "none",
+      );
+    if (dense) {
+      markers.current.forEach((v) => v.marker.remove());
+      markers.current.clear();
+      return;
+    }
+    const animations: {
+      item: { marker: maplibregl.Marker };
+      from: { lng: number; lat: number };
+      to: Aircraft;
+    }[] = [];
+    let animation = 0;
     const ids = new Set(aircraft.map((a) => a.icao24));
     for (const [id, v] of markers.current)
       if (!ids.has(id)) {
@@ -296,7 +341,15 @@ function RadarMap({
         };
         markers.current.set(a.icao24, item);
       }
-      item.marker.setLngLat([a.lon, clampLatitude(a.lat)]);
+      const from = item.marker.getLngLat();
+      if (
+        animateUpdates &&
+        !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+        Math.abs(from.lat - a.lat) < 2 &&
+        Math.abs(wrappedLongitudeDelta(from.lng, a.lon)) < 2
+      )
+        animations.push({ item, from, to: a });
+      else item.marker.setLngLat([a.lon, clampLatitude(a.lat)]);
       item.button.classList.toggle("is-selected", a.icao24 === selected);
       item.button.classList.toggle("show-label", labels);
       item.button.classList.toggle("unknown-track", a.track_deg == null);
@@ -323,12 +376,32 @@ function RadarMap({
       for (const [id, item] of markers.current)
         item.button.classList.toggle("show-label", labels && allowed.has(id));
     };
+    if (animations.length) {
+      const started = performance.now();
+      const draw = () => {
+        const t = Math.min(1, (performance.now() - started) / 1200);
+        for (const a of animations)
+          a.item.marker.setLngLat([
+            t === 1
+              ? a.to.lon
+              : ((a.from.lng +
+                  wrappedLongitudeDelta(a.from.lng, a.to.lon) * t +
+                  540) %
+                  360) -
+                180,
+            a.from.lat + (clampLatitude(a.to.lat) - a.from.lat) * t,
+          ]);
+        if (t < 1) animation = requestAnimationFrame(draw);
+      };
+      animation = requestAnimationFrame(draw);
+    }
     placeLabels();
     m.on("moveend", placeLabels);
     return () => {
+      cancelAnimationFrame(animation);
       m.off("moveend", placeLabels);
     };
-  }, [aircraft, selected, labels, loaded, u]);
+  }, [aircraft, selected, labels, loaded, u, animateUpdates]);
   useEffect(() => {
     const m = map.current;
     if (!m || !loaded) return;
@@ -371,6 +444,9 @@ function RadarMap({
   }, [aircraft, selected, follow, online, loaded]);
   return (
     <div
+      data-renderer={
+        online ? (aircraft.length > 250 ? "webgl" : "dom") : "offline"
+      }
       className={`radar-map ${night ? "map-night" : "map-day"} ${online ? "map-online" : "map-offline"}`}
     >
       {online ? (
@@ -471,7 +547,7 @@ function RadarMap({
               )
             );
           })()}
-          {aircraft.map((a) => {
+          {offlineAircraft.map((a) => {
             const point = projection([a.lon, clampLatitude(a.lat)]);
             if (
               !point ||
@@ -528,6 +604,17 @@ function RadarMap({
             );
           })}
         </svg>
+      )}
+      {!online && aircraft.length > 500 && (
+        <div className="map-density-note">
+          Offline map: {offlineAircraft.length} of {aircraft.length} aircraft
+          drawn. Use search to narrow the display.
+        </div>
+      )}
+      {online && aircraft.length > 250 && (
+        <div className="map-density-note">
+          GPU fleet rendering · keyboard selection available in traffic list
+        </div>
       )}
       {online && !loaded && (
         <div className="map-loading" role="status">
