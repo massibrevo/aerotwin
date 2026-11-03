@@ -450,13 +450,12 @@ test("units convert instantly, preserve selection and filters, and persist acros
     .click();
   const inspector = page.getByLabel("Aircraft inspector");
   await expect(inspector.locator(".flight-metrics")).toContainText("2,000");
-  await page
-    .getByRole("button", { name: "Display units", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Metric units", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Close display units", exact: true })
-    .click();
+  const metricSwitch = page.getByRole("switch", {
+    name: "Metric units",
+    exact: true,
+  });
+  await metricSwitch.click();
+  await expect(metricSwitch).toBeChecked();
   await expect(inspector).toContainText("SYN101");
   await expect(inspector.locator(".flight-metrics")).toContainText("610");
   await expect(inspector.locator(".flight-metrics")).toContainText("333");
@@ -473,15 +472,8 @@ test("units convert instantly, preserve selection and filters, and persist acros
   await min.press("ArrowRight");
   await expect(min).toHaveAttribute("aria-valuetext", "305 m");
   const filteredCount = await page.locator(".aircraft-row").count();
-  await page
-    .getByRole("button", { name: "Display units", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Aviation units", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Close display units", exact: true })
-    .click();
+  await metricSwitch.press("Space");
+  await expect(metricSwitch).not.toBeChecked();
   await expect(min).toHaveAttribute("aria-valuetext", "1,000 ft");
   await expect(page.locator(".aircraft-row")).toHaveCount(filteredCount);
   await page

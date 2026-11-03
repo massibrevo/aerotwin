@@ -1,3 +1,4 @@
+import { SlidersHorizontal } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -121,6 +122,9 @@ export const useUnits = () => useContext(UnitContext);
 export function UnitsControl() {
   const u = useUnits();
   const [open, setOpen] = useState(false);
+  const isMetric = (Object.keys(metric) as (keyof Units)[]).every(
+    (key) => u.units[key] === metric[key],
+  );
   return (
     <div
       className="units-control"
@@ -129,15 +133,26 @@ export function UnitsControl() {
       }}
     >
       <button
+        className="metric-switch"
+        role="switch"
+        aria-label="Metric units"
+        aria-checked={isMetric}
+        title="Switch live between aviation and metric units"
+        onClick={() => u.setUnits(isMetric ? aviation : metric)}
+      >
+        <span className="metric-track" aria-hidden="true">
+          <i />
+        </span>
+        <span>Metric</span>
+      </button>
+      <button
         className="units-toggle"
         aria-label="Display units"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        Units{" "}
-        <span>
-          {u.units.altitude} · {u.units.speed}
-        </span>
+        <SlidersHorizontal size={15} aria-hidden="true" />
+        <span>Units</span>
       </button>
       {open && (
         <>

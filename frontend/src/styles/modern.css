@@ -1347,3 +1347,68 @@ footer {
   padding: 0;
   min-height: 0;
 }
+.units-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.metric-switch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.metric-track {
+  display: inline-flex;
+  width: 28px;
+  height: 16px;
+  border-radius: 12px;
+  background: #91a0b4;
+  padding: 2px;
+  transition: background 0.15s;
+}
+.metric-track i {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.15s;
+}
+.metric-switch[aria-checked="true"] .metric-track {
+  background: var(--accent);
+}
+.metric-switch[aria-checked="true"] .metric-track i {
+  transform: translateX(12px);
+}
+.units-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.units-toggle span {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .metric-switch {
+    padding: 6px;
+    gap: 5px;
+    font-size: 10px;
+  }
+  .units-toggle {
+    width: 30px;
+    justify-content: center;
+    padding: 6px;
+  }
+  .units-control {
+    gap: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .metric-track,
+  .metric-track i {
+    transition: none;
+  }
+}

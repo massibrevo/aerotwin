@@ -144,3 +144,6 @@ Serve Internet. Il servizio riceve il codice pubblico ICAO dell’aereo selezion
 Apri **Units** nella barra superiore. **Metric units** cambia subito quota in metri, velocità in km/h, distanze in km e velocità verticale in m/s. **Aviation units** ripristina ft, kt, NM e ft/min. Puoi scegliere le quattro unità separatamente, incluse mph e miglia terrestri. La scelta è salvata nel browser e vale per schede, lista, mappe, raggio, filtri, grafici delle quote e input della distanza in Forecast lab. La selezione dell’aereo e i filtri rimangono attivi.
 
 Il raggio personalizzato e la distanza del modello accettano la nuova unità e vengono convertiti prima della richiesta. I dati originali, API e CSV mantengono le unità della fonte; i valori mancanti restano mancanti. I numeri mostrati sono arrotondati, senza modificare la precisione conservata nei dati.
+
+
+Per una conversione immediata basta l’interruttore **Metric** nella barra superiore: attivo = m, km/h, km, m/s; disattivo = ft, kt, NM, ft/min. La scelta viene salvata. **Units** apre le impostazioni separate.
