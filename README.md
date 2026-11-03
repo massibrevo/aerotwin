@@ -4,7 +4,7 @@
 
 [Guida completa in italiano](docs/guida-italiano.md) · [Download releases](https://github.com/massibrevo/aerotwin/releases) · [Scientific methodology](docs/methodology.md)
 
-AeroTwin **0.5.0** runs a compiled React interface and Python API on **one local server**. No API keys, cloud account, hosted database, telemetry, GPU or LLM. First setup needs Internet for open-source dependencies; the offline demonstration then works without network. Live observations and optional online tiles require network access.
+AeroTwin **0.6.0** runs a compiled React interface and Python API on **one local server**. No API keys, cloud account, hosted database, telemetry, GPU or LLM. First setup needs Internet for open-source dependencies; the offline demonstration then works without network. Live observations and optional online tiles require network access.
 
 > Research, teaching and portfolio use only. No certification for dispatch, air traffic control, navigation or safety decisions. Software tests do not validate real aviation forecasting accuracy.
 
@@ -12,7 +12,7 @@ AeroTwin **0.5.0** runs a compiled React interface and Python API on **one local
 
 ## Install a distribution ZIP
 
-Download `aerotwin-0.5.0.zip` from [Releases](https://github.com/massibrevo/aerotwin/releases), extract it, install **Python 3.12 or 3.13**, and run inside the extracted directory:
+Download `aerotwin-0.6.0.zip` from [Releases](https://github.com/massibrevo/aerotwin/releases), extract it, install **Python 3.12 or 3.13**, and run inside the extracted directory:
 
 ```bash
 python scripts/bootstrap.py
@@ -26,6 +26,10 @@ python scripts/verify.py --base-url http://127.0.0.1:5188
 ```
 
 Expected: **10/10 checks passed**. Use `--port 5190` if the default port is occupied, and change the verification URL accordingly. Existing processes are never killed by the launcher.
+
+## Italian and English interface
+
+Use the **English / Italiano** selector in the top bar. The saved choice applies instantly to every page, navigation, accessible labels, tooltips, common error messages, model diagnostics and mathematical explanations. Numeric separators and displayed local dates follow the selected locale. Switching languages preserves the selected aircraft, forms, units and active recording controls. Raw METARs, airport names/codes, user labels, formulas, CSV/JSON payloads and model inputs retain their source representation. No translation service or network request is used. [Localization and terminology](docs/localization.md).
 
 ## Run from source
 

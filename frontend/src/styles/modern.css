@@ -1570,3 +1570,63 @@ footer {
     font-size: 11px;
   }
 }
+
+.language-control select {
+  min-height: 36px;
+  width: 100px;
+  padding: 7px 20px 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  font-size: 12px;
+}
+@media (max-width: 650px) {
+  .language-control select {
+    width: 88px;
+    padding-left: 7px;
+  }
+  .topbar-right {
+    gap: 5px;
+  }
+}
+@media (max-width: 650px) {
+  .topbar {
+    padding-inline: 10px;
+  }
+  .topbar .breadcrumb {
+    display: none;
+  }
+  .topbar-right {
+    width: 100%;
+    min-width: 0;
+    gap: 4px;
+  }
+  .metric-switch > span:last-child {
+    display: none;
+  }
+  .topbar .badge {
+    min-width: 0;
+    max-width: 70px;
+    overflow-wrap: anywhere;
+  }
+  .language-control select {
+    width: 83px;
+  }
+  .topbar .workspace-search {
+    width: 30px;
+    min-width: 30px;
+    padding: 6px;
+  }
+}
+@media (max-width: 420px) {
+  .topbar .theme-toggle {
+    display: none;
+  }
+}
+@media (max-width: 360px) {
+  .topbar .metric-switch {
+    display: none;
+  }
+}

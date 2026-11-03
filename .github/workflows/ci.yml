@@ -50,8 +50,8 @@ jobs:
       - run: python scripts/package_release.py
       - name: Test extracted ZIP bootstrap (compiled UI; no Node commands)
         run: |
-          python -c "import zipfile; zipfile.ZipFile('releases/aerotwin-0.5.0.zip').extractall('work/release-smoke')"
-          cd work/release-smoke/aerotwin-0.5.0
+          python -c "import zipfile; zipfile.ZipFile('releases/aerotwin-0.6.0.zip').extractall('work/release-smoke')"
+          cd work/release-smoke/aerotwin-0.6.0
           python scripts/bootstrap.py
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Linux' && success()

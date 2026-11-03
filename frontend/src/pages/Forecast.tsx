@@ -1,3 +1,4 @@
+import { tx, useLocale } from "../i18n";
 import { Link } from "react-router-dom";
 import { saveJson } from "../features/analytics/export";
 import ModelDiagnostics from "../features/analytics/ModelDiagnostics";
@@ -17,6 +18,7 @@ import { useApi, post } from "../api";
 import type { Model, Prediction } from "../types";
 import { Badge, State, Panel, Chart, num } from "../components/UI";
 export default function Forecast() {
+  useLocale();
   const u = useUnits();
   const r = useApi<Model[]>("/models");
   const [modelId, setModelId] = useState("synthetic");
@@ -51,14 +53,14 @@ export default function Forecast() {
   return (
     <>
       <p>
-        <Link to="/math">Math formulas and assumptions →</Link>
+        <Link to="/math">{tx("Math formulas and assumptions →")}</Link>
       </p>
       <State error={r.error} />
       <div className="controls-bar">
         <label>
-          Model
+          {tx("Model")}
           <select
-            aria-label="Trained model"
+            aria-label={tx("Trained model")}
             value={modelId}
             onChange={(e) => {
               setModelId(e.target.value);
@@ -67,26 +69,30 @@ export default function Forecast() {
           >
             {r.data?.map((m) => (
               <option key={m.model_id} value={m.model_id}>
-                {m.label} / {m.selected_model}
+                {tx(m.label)} {tx(" / ")}
+                {tx(m.selected_model)}
               </option>
             ))}
           </select>
         </label>
-        <Badge tone="amber">{model?.label ?? "NO MODEL"}</Badge>
+        <Badge tone="amber">{tx(model?.label ?? "NO MODEL")}</Badge>
         <span className="small muted">
-          Departure delay regression · Forecast issued 120 minutes before
-          schedule
+          {tx(
+            "Departure delay regression · Forecast issued 120 minutes before schedule",
+          )}
         </span>
       </div>
       {!model && (
         <div className="notice">
-          No trained model available. Run{" "}
-          <code>python -m aerotwin.cli train --dataset synthetic</code>.
+          {tx("No trained model available. Run")}
+          {tx(" ")}
+          <code>{tx("python -m aerotwin.cli train --dataset synthetic")}</code>
+          {tx(".")}
         </div>
       )}
       <div className="forecast-grid">
         <Panel
-          title="Schedule-only prediction"
+          title={tx("Schedule-only prediction")}
           aside={<FlaskConical size={17} />}
         >
           <form
@@ -110,21 +116,25 @@ export default function Forecast() {
             }}
           >
             <p className="small muted">
-              Training support: airports{" "}
-              {model?.support?.origins.join(", ") ?? "see model report"};
-              carriers {model?.support?.carriers.join(", ") ?? "unknown"}.
-              Unseen airports/carriers are rejected.
+              {tx("Training support: airports")}
+              {tx(" ")}
+              {tx(model?.support?.origins.join(", ") ?? "see model report")}
+              {tx("; carriers ")}
+              {tx(model?.support?.carriers.join(", ") ?? "unknown")}
+              {tx(". Unseen airports/carriers are rejected.")}
             </p>
             <div className="form-grid">
               {(["origin", "dest", "carrier"] as const).map((k) => (
                 <label key={k}>
-                  {k === "dest"
-                    ? "Destination"
-                    : k === "origin"
-                      ? "Origin airport"
-                      : "Carrier"}
+                  {tx(
+                    k === "dest"
+                      ? "Destination"
+                      : k === "origin"
+                        ? "Origin airport"
+                        : "Carrier",
+                  )}
                   <input
-                    aria-label={`Forecast ${k}`}
+                    aria-label={tx(`Forecast ${k}`)}
                     required
                     pattern={k === "carrier" ? "[A-Z0-9]{2,3}" : "[A-Z]{3}"}
                     value={values[k]}
@@ -140,16 +150,16 @@ export default function Forecast() {
               ))}
               {(["hour", "month", "dow", "distance"] as const).map((k) => (
                 <label key={k}>
-                  {
+                  {tx(
                     {
                       hour: "Local departure hour",
                       month: "Month",
                       dow: "Weekday (Mon = 0)",
                       distance: `Distance / ${u.label("routeDistance")}`,
-                    }[k]
-                  }
+                    }[k],
+                  )}
                   <input
-                    aria-label={`Forecast ${k}`}
+                    aria-label={tx(`Forecast ${k}`)}
                     type="number"
                     required
                     min={
@@ -193,54 +203,63 @@ export default function Forecast() {
               type="submit"
             >
               <FlaskConical size={15} />
-              {busy ? "Computing prediction…" : "Predict departure delay"}
+              {tx(busy ? "Computing prediction…" : "Predict departure delay")}
             </button>
           </form>
           <State error={error} />
           {result && (
-            <div className="prediction-result" aria-label="Prediction result">
-              <span className="eyebrow">{result.label} / T−120 MIN</span>
+            <div
+              className="prediction-result"
+              aria-label={tx("Prediction result")}
+            >
+              <span className="eyebrow">
+                {tx(result.label)} {tx(" / T−120 MIN")}
+              </span>
               <strong>
-                {num(result.prediction_minutes, 1)}
-                <small> min</small>
+                {tx(num(result.prediction_minutes, 1))}
+                <small> {tx(" min")}</small>
               </strong>
               <p>
-                Nominal 90% residual interval:{" "}
+                {tx("Nominal 90% residual interval:")}
+                {tx(" ")}
                 <b>
-                  {num(result.interval_minutes[0], 1)} to{" "}
-                  {num(result.interval_minutes[1], 1)} min
+                  {tx(num(result.interval_minutes[0], 1))} {tx(" to")}
+                  {tx(" ")}
+                  {tx(num(result.interval_minutes[1], 1))} {tx(" min")}
                 </b>
               </p>
               {!!result.sensitivity?.length && (
                 <div
                   className="prediction-sensitivity"
-                  aria-label="Per-flight sensitivity"
+                  aria-label={tx("Per-flight sensitivity")}
                 >
-                  <h3>What changes this prediction?</h3>
-                  <p className="small muted">{result.sensitivity_caveat}</p>
+                  <h3>{tx("What changes this prediction?")}</h3>
+                  <p className="small muted">{tx(result.sensitivity_caveat)}</p>
                   <div className="table-wrap">
                     <table>
                       <thead>
                         <tr>
-                          <th>Feature</th>
-                          <th>Training reference</th>
-                          <th>Prediction change / min</th>
+                          <th>{tx("Feature")}</th>
+                          <th>{tx("Training reference")}</th>
+                          <th>{tx("Prediction change / min")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {result.sensitivity.map((row) => (
                           <tr key={row.feature}>
-                            <td>{row.feature}</td>
+                            <td>{tx(row.feature)}</td>
                             <td>
-                              {row.feature === "distance"
-                                ? u.format(
-                                    Number(row.reference_value),
-                                    "routeDistance",
-                                    1,
-                                  )
-                                : String(row.reference_value)}
+                              {tx(
+                                row.feature === "distance"
+                                  ? u.format(
+                                      Number(row.reference_value),
+                                      "routeDistance",
+                                      1,
+                                    )
+                                  : String(row.reference_value),
+                              )}
                             </td>
-                            <td>{num(row.change_minutes, 2)}</td>
+                            <td>{tx(num(row.change_minutes, 2))}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -249,13 +268,13 @@ export default function Forecast() {
                 </div>
               )}
               <p className="small muted">
-                {result.caveat} {result.warnings.join(" ")}
+                {tx(result.caveat)} {tx(result.warnings.join(" "))}
               </p>
             </div>
           )}
         </Panel>
         <Panel
-          title="Temporal holdout evaluation"
+          title={tx("Temporal holdout evaluation")}
           aside={
             <button
               disabled={!model}
@@ -264,16 +283,16 @@ export default function Forecast() {
                 saveJson(model, `aerotwin-${modelId}-model-report.json`)
               }
             >
-              Export model report
+              {tx("Export model report")}
             </button>
           }
         >
           <table className="metric-table">
             <thead>
               <tr>
-                <th>Estimator</th>
-                <th>Test MAE</th>
-                <th>Test RMSE</th>
+                <th>{tx("Estimator")}</th>
+                <th>{tx("Test MAE")}</th>
+                <th>{tx("Test RMSE")}</th>
               </tr>
             </thead>
             <tbody>
@@ -281,13 +300,13 @@ export default function Forecast() {
                 Object.entries(model.metrics).map(([name, m]) => (
                   <tr key={name}>
                     <td>
-                      {name.replaceAll("_", " ")}
+                      {tx(name.replaceAll("_", " "))}
                       {name === model.selected_model && (
-                        <span className="selected-tag">selected</span>
+                        <span className="selected-tag">{tx("selected")}</span>
                       )}
                     </td>
-                    <td>{num(m.test.mae, 2)}</td>
-                    <td>{num(m.test.rmse, 2)}</td>
+                    <td>{tx(num(m.test.mae, 2))}</td>
+                    <td>{tx(num(m.test.rmse, 2))}</td>
                   </tr>
                 ))}
             </tbody>
@@ -296,30 +315,32 @@ export default function Forecast() {
             {model &&
               Object.entries(model.n).map(([k, v]) => (
                 <div key={k}>
-                  <span>{k}</span>
-                  <strong>{num(v)}</strong>
+                  <span>{tx(k)}</span>
+                  <strong>{tx(num(v))}</strong>
                   <small>
-                    {model.windows[k]?.map((w) => w.slice(0, 10)).join(" → ")}
+                    {tx(
+                      model.windows[k]?.map((w) => w.slice(0, 10)).join(" → "),
+                    )}
                   </small>
                 </div>
               ))}
           </div>
           <p className="small muted">
-            Selection uses validation MAE. Test metrics are final holdout
-            results. Training labels must be available before the next split’s
-            earliest issuance; 24h label embargo. Realized flight times and
-            delay causes are excluded.
+            {tx(
+              "Selection uses validation MAE. Test metrics are final holdout results. Training labels must be available before the next split’s earliest issuance; 24h label embargo. Realized flight times and delay causes are excluded.",
+            )}
           </p>
           <div className="integrity-row">
-            <span>Measured test interval coverage</span>
+            <span>{tx("Measured test interval coverage")}</span>
             <strong>
-              {num(model ? model.interval_test_coverage * 100 : null, 1)}%
+              {tx(num(model ? model.interval_test_coverage * 100 : null, 1))}
+              {tx("%")}
             </strong>
           </div>
         </Panel>
       </div>
       <div className="two-col">
-        <Panel title="Holdout: predicted vs actual delay">
+        <Panel title={tx("Holdout: predicted vs actual delay")}>
           <div className="chart">
             <ResponsiveContainer>
               <ScatterChart>
@@ -327,13 +348,13 @@ export default function Forecast() {
                 <XAxis
                   type="number"
                   dataKey="actual"
-                  name="Actual / min"
+                  name={tx("Actual / min")}
                   tick={{ fill: "var(--text-muted)", fontSize: 12 }}
                 />
                 <YAxis
                   type="number"
                   dataKey="predicted"
-                  name="Predicted / min"
+                  name={tx("Predicted / min")}
                   tick={{ fill: "var(--text-muted)", fontSize: 12 }}
                 />
                 <Tooltip
@@ -352,8 +373,8 @@ export default function Forecast() {
           </div>
         </Panel>
         <Panel
-          title="Global permutation importance"
-          aside={<span className="tiny">VALIDATION Δ MAE / MIN</span>}
+          title={tx("Global permutation importance")}
+          aside={<span className="tiny">{tx("VALIDATION Δ MAE / MIN")}</span>}
         >
           <Chart
             data={Object.entries(
@@ -364,30 +385,36 @@ export default function Forecast() {
             x="feature"
           />
           <p className="small muted">
-            Global predictive sensitivity measured on validation rows. These are
-            not per-flight explanations or causal effects.
+            {tx(
+              "Global predictive sensitivity measured on validation rows. These are not per-flight explanations or causal effects.",
+            )}
           </p>
         </Panel>
       </div>
       <ModelDiagnostics
         data={model?.diagnostics}
-        label={model?.label ?? "Model not selected"}
+        label={tx(model?.label ?? "Model not selected")}
       />
-      <Panel title="Train with official data">
+      <Panel title={tx("Train with official data")}>
         <p className="muted">
-          The bundled model learns a seeded synthetic process. Its scores are
-          not an aviation benchmark. Download official BTS data, import it, then
-          train a separate real-data artifact.
+          {tx(
+            "The bundled model learns a seeded synthetic process. Its scores are not an aviation benchmark. Download official BTS data, import it, then train a separate real-data artifact.",
+          )}
         </p>
         <pre>
-          python -m aerotwin.cli ingest-bts --input /path/to/bts.csv
-          --timezone-map /path/to/zones.json{"\n"}python -m aerotwin.cli train
-          --dataset bts
+          {tx(
+            "python -m aerotwin.cli ingest-bts --input /path/to/bts.csv --timezone-map /path/to/zones.json",
+          )}
+          {tx("\n")}
+          {tx("python -m aerotwin.cli train --dataset bts")}
         </pre>
         <p className="small muted">
-          Expanding-origin ridge backtests completed:{" "}
-          {model?.rolling_origin.length ?? 0}. Full fold metrics are available
-          in Data & experiments and the model report JSON.
+          {tx("Expanding-origin ridge backtests completed:")}
+          {tx(" ")}
+          {tx(model?.rolling_origin.length ?? 0)}
+          {tx(
+            ". Full fold metrics are available in Data & experiments and the model report JSON.",
+          )}
         </p>
       </Panel>
     </>

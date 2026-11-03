@@ -1,3 +1,4 @@
+import { tx, useLocale } from "./i18n";
 import Airports from "./pages/Airports";
 import MathMethods from "./pages/MathMethods";
 import { memo, useCallback, useEffect, useLayoutEffect, useState } from "react";
@@ -65,6 +66,13 @@ const nav = [
   ["/guide", "Guida all’uso", BookOpen],
 ] as const;
 export default function App() {
+  const locale = useLocale();
+  useEffect(() => {
+    document.title =
+      locale === "it"
+        ? "AeroTwin — Analisi del traffico aereo"
+        : "AeroTwin — Aviation Intelligence";
+  }, [locale]);
   const [theme, setTheme] = useState(
     () => localStorage.getItem("aerotwin:theme") ?? "light",
   );
@@ -293,23 +301,25 @@ export default function App() {
             <Plane size={25} />
           </div>
           <span>
-            AeroTwin<small>AVIATION INTELLIGENCE</small>
+            {tx("AeroTwin")}
+            <small>{tx("AVIATION INTELLIGENCE")}</small>
           </span>
         </Link>
         <div className="workspace-label">
-          WORKSPACE <span>LOCAL</span>
+          {tx("WORKSPACE ")}
+          <span>{tx("LOCAL")}</span>
         </div>
         <nav>
           {nav.map(([path, label, Icon], i) => (
-            <Tip key={path} label={label}>
+            <Tip key={path} label={tx(label)}>
               <NavLink
-                aria-label={label}
-                title={label}
+                aria-label={tx(label)}
+                title={tx(label)}
                 to={path}
                 end={path === "/"}
               >
                 <Icon size={18} />
-                <span>{label}</span>
+                <span>{tx(label)}</span>
                 {i === 1 && <span className="nav-dot" />}
               </NavLink>
             </Tip>
@@ -319,19 +329,22 @@ export default function App() {
           <div className="local-status">
             <ShieldCheck size={17} />
             <div>
-              Local-first workspace<small>No keys. No telemetry.</small>
+              {tx("Local-first workspace")}
+              <small>{tx("No keys. No telemetry.")}</small>
             </div>
           </div>
           <div className="version">
-            AEROTWIN / v0.5.0 <span>RESEARCH</span>
+            {tx("AEROTWIN / v0.6.0 ")}
+            <span>{tx("RESEARCH")}</span>
           </div>
         </div>
       </aside>
       <div className="main-shell">
         <header className="topbar">
           <div className="breadcrumb">
-            Workspace <ChevronRight size={13} />
-            <span>{title}</span>
+            {tx("Workspace ")}
+            <ChevronRight size={13} />
+            <span>{tx(title)}</span>
           </div>
           <div className="topbar-right">
             <WorkspaceTools
@@ -341,24 +354,26 @@ export default function App() {
               }
             />
             <span className="utc-clock">
-              {new Date(tick).toISOString().slice(11, 19)} UTC
+              {tx(new Date(tick).toISOString().slice(11, 19))} {tx(" UTC")}
             </span>
             <Badge tone={mode === "live" ? "cyan" : "amber"}>
-              {mode === "demo"
-                ? "SYNTHETIC DEMO"
-                : mode === "recorded"
-                  ? "RECORDED · NOT LIVE"
-                  : mode === "replay"
-                    ? "REPLAY · SYNTHETIC"
-                    : snapshot?.status === "live" && !radarError
-                      ? recording
-                        ? "LIVE · REC"
-                        : "LIVE"
-                      : snapshot || radarError
-                        ? "LIVE UNAVAILABLE"
-                        : "CONNECTING"}
+              {tx(
+                mode === "demo"
+                  ? "SYNTHETIC DEMO"
+                  : mode === "recorded"
+                    ? "RECORDED · NOT LIVE"
+                    : mode === "replay"
+                      ? "REPLAY · SYNTHETIC"
+                      : snapshot?.status === "live" && !radarError
+                        ? recording
+                          ? "LIVE · REC"
+                          : "LIVE"
+                        : snapshot || radarError
+                          ? "LIVE UNAVAILABLE"
+                          : "CONNECTING",
+              )}
             </Badge>
-            <div className="avatar">AT</div>
+            <div className="avatar">{tx("AT")}</div>
           </div>
         </header>
         <main>
@@ -366,32 +381,39 @@ export default function App() {
             <div>
               <div className="eyebrow">
                 <span className="page-accent-mark" />
-                AEROTWIN /{" "}
-                {location.pathname === "/"
-                  ? "OPERATIONS OVERVIEW"
-                  : title.toUpperCase()}
+                {tx("AEROTWIN /")}
+                {tx(" ")}
+                {tx(
+                  location.pathname === "/"
+                    ? "OPERATIONS OVERVIEW"
+                    : tx(title).toUpperCase(),
+                )}
               </div>
               <h1>
-                {location.pathname === "/"
-                  ? "Your airspace. In perspective."
-                  : title}
+                {tx(
+                  location.pathname === "/"
+                    ? "Your airspace. In perspective."
+                    : title,
+                )}
               </h1>
               <p>
-                {location.pathname === "/"
-                  ? "Observe the skies. Explore the data. Understand the network."
-                  : "A transparent workspace for aviation research and reproducible experiments."}
+                {tx(
+                  location.pathname === "/"
+                    ? "Observe the skies. Explore the data. Understand the network."
+                    : "A transparent workspace for aviation research and reproducible experiments.",
+                )}
               </p>
             </div>
             <div className="heading-actions">
               <label className="compact">
-                Historical dataset
+                {tx("Historical dataset")}
                 <select
-                  aria-label="Historical dataset"
+                  aria-label={tx("Historical dataset")}
                   value={dataset}
                   onChange={(e) => setDataset(e.target.value)}
                 >
-                  <option value="synthetic">Synthetic examples</option>
-                  <option value="bts">Imported BTS</option>
+                  <option value="synthetic">{tx("Synthetic examples")}</option>
+                  <option value="bts">{tx("Imported BTS")}</option>
                 </select>
               </label>
             </div>
@@ -399,16 +421,19 @@ export default function App() {
           <div className="mode-banner">
             <Compass size={16} />
             <span>
-              {mode === "demo"
-                ? `Offline workspace · Aircraft are synthetic examples. Historical dataset: ${dataset === "synthetic" ? "synthetic examples" : "imported BTS"}.`
-                : mode === "recorded"
-                  ? "Recorded ADS-B observations · historic capture times, not LIVE. Frame replay speed is not real time."
-                  : mode === "replay"
-                    ? "Replay · Bundled synthetic BCN snapshots recorded at a fixed example epoch."
-                    : "Live ADS-B · Community observations in queried coverage; no verified routes or delay information."}
+              {tx(
+                mode === "demo"
+                  ? `Offline workspace · Aircraft are synthetic examples. Historical dataset: ${dataset === "synthetic" ? "synthetic examples" : "imported BTS"}.`
+                  : mode === "recorded"
+                    ? "Recorded ADS-B observations · historic capture times, not LIVE. Frame replay speed is not real time."
+                    : mode === "replay"
+                      ? "Replay · Bundled synthetic BCN snapshots recorded at a fixed example epoch."
+                      : "Live ADS-B · Community observations in queried coverage; no verified routes or delay information.",
+              )}
             </span>
             <Link to="/about">
-              Read methodology <ArrowRight size={13} />
+              {tx("Read methodology ")}
+              <ArrowRight size={13} />
             </Link>
           </div>
           <motion.div
@@ -456,7 +481,8 @@ export default function App() {
                 path="*"
                 element={
                   <div className="notice">
-                    Page not found. <Link to="/">Return to control tower</Link>
+                    {tx("Page not found. ")}
+                    <Link to="/">{tx("Return to control tower")}</Link>
                   </div>
                 }
               />
@@ -464,10 +490,12 @@ export default function App() {
           </motion.div>
           <footer>
             <span>
-              <i className="dot" /> LOCAL COMPUTE · OPEN SOURCE
+              <i className="dot" /> {tx(" LOCAL COMPUTE · OPEN SOURCE")}
             </span>
             <span>
-              Research & education only · Not for operational aviation decisions
+              {tx(
+                "Research & education only · Not for operational aviation decisions",
+              )}
             </span>
           </footer>
         </main>

@@ -1,10 +1,10 @@
-# AeroTwin 0.5 — installazione, uso e interpretazione
+# AeroTwin 0.6 — installazione, uso e interpretazione
 
 AeroTwin è un'applicazione locale per osservare posizioni ADS-B, esplorare dati di programma dei voli, addestrare modelli temporali e confrontare scenari di coda. Questa distribuzione è pensata per una persona su un computer fidato, per ricerca, portfolio e didattica. La solidità tecnica dell'applicazione non equivale alla validazione aeronautica delle previsioni.
 
 ## 1. Installazione dalla distribuzione ZIP
 
-1. Scarica `aerotwin-0.5.0.zip` dalla release GitHub ed estrailo in una cartella scrivibile. Conserva tutti i file e le sottocartelle. Il relativo `.sha256` permette di controllare che il download sia integro; non è una firma digitale.
+1. Scarica `aerotwin-0.6.0.zip` dalla release GitHub ed estrailo in una cartella scrivibile. Conserva tutti i file e le sottocartelle. Il relativo `.sha256` permette di controllare che il download sia integro; non è una firma digitale.
 2. Installa Python **3.12 o 3.13**, con `pip` e `venv`. La prima preparazione scarica le librerie Python: serve Internet. La versione ZIP contiene già l'interfaccia compilata e non richiede Node.js per preparazione/esecuzione.
 3. Apri un terminale nella cartella estratta ed esegui:
 
@@ -175,3 +175,9 @@ Ferma la sessione e scegli **Replay observations**. I dati hanno badge **RECORDE
 In **Airport explorer**, cerca codice, aeroporto o città. I 6.146 riferimenti comprendono aeroporti grandi/medi e piccoli con servizio di linea: non ogni aviosuperficie privata. Piste e flag provengono da OurAirports e non indicano disponibilità attuale/NOTAM. L’orario locale usa il fuso IANA disponibile (riferimento OpenFlights/ODbL); senza fuso resta sconosciuto. I METAR NOAA/NWS mostrano istante UTC, età e testo originale; oltre due ore sono marcati vecchi. Mancanza del dato non genera meteo sintetico. Il meteo non entra nel modello storico T−120.
 
 Le formule sono nella pagina **Mathematical methods**, raggiungibile da Analytics studio, Forecast lab e Methodology, e nell’[appendice matematica completa](mathematical-methods.md): medie, quantili, denominatori, standardizzazione dei gruppi, embargo temporale, MAE/RMSE/bias, intervalli residui, Wilson, bootstrap per data, shift degli input, sensibilità, centralità di rete e simulazione di coda. Le ipotesi e i limiti sono espliciti. [Dettagli 0.5](radar-airports-v0.5.md).
+
+## 12. Interfaccia unificata italiano/inglese
+
+Nella barra superiore scegli **Italiano**. La scelta si applica subito a tutte le pagine e rimane salvata su questo browser. Puoi tornare a **English** in qualsiasi momento senza perdere il volo selezionato, i filtri, le unità o i campi compilati. I separatori numerici seguono la lingua; le conversioni delle unità restano un’impostazione distinta.
+
+Le etichette usano una terminologia comune: **Radar in tempo reale**, **Analisi e statistiche**, **Laboratorio previsioni**, **Esplora aeroporti**, **Dati ed esperimenti**. I bollettini METAR originali, i nomi/codici aeroportuali, le etichette personali delle sessioni, i simboli delle formule e i file CSV/JSON mantengono la rappresentazione della fonte. Eventuali dettagli tecnici sconosciuti restituiti da un provider restano originali. La traduzione è locale e non invia dati a servizi esterni.

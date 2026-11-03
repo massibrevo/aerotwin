@@ -1,3 +1,4 @@
+import { tx, useLocale } from "../../i18n";
 import { useEffect, useRef, useState } from "react";
 import { request } from "../../api";
 import type { Aircraft, Snapshot } from "../../types";
@@ -8,6 +9,7 @@ export default function LiveLookup({
   query: string;
   onLocate: (a: Aircraft) => void;
 }) {
+  useLocale();
   const [kind, setKind] = useState("callsign");
   const [result, setResult] = useState<Snapshot>();
   const [error, setError] = useState("");
@@ -48,27 +50,29 @@ export default function LiveLookup({
         }}
       >
         <select
-          aria-label="Live lookup type"
+          aria-label={tx("Live lookup type")}
           value={kind}
           onChange={(e) => setKind(e.target.value)}
         >
-          <option value="callsign">Exact callsign</option>
-          <option value="registration">Registration</option>
-          <option value="hex">ICAO hex</option>
+          <option value="callsign">{tx("Exact callsign")}</option>
+          <option value="registration">{tx("Registration")}</option>
+          <option value="hex">{tx("ICAO hex")}</option>
         </select>
         <button type="submit" disabled={busy || query.trim().length < 2}>
-          {busy ? "Searching…" : "Find worldwide"}
+          {tx(busy ? "Searching…" : "Find worldwide")}
         </button>
       </form>
-      <small>Local filter above · worldwide lookup uses ADSB.lol</small>
-      {error && <p role="alert">{error}</p>}
+      <small>{tx("Local filter above · worldwide lookup uses ADSB.lol")}</small>
+      {error && <p role="alert">{tx(error)}</p>}
       {result && (
         <div role="status">
-          {result.status === "unavailable"
-            ? result.error
-            : result.aircraft.length
-              ? `${result.aircraft.length} positioned match(es)`
-              : "No positioned match. This does not prove the aircraft is not flying."}
+          {tx(
+            result.status === "unavailable"
+              ? result.error
+              : result.aircraft.length
+                ? `${result.aircraft.length} positioned match(es)`
+                : "No positioned match. This does not prove the aircraft is not flying.",
+          )}
         </div>
       )}
       {result?.aircraft.slice(0, 20).map((a) => (
@@ -80,16 +84,21 @@ export default function LiveLookup({
             setResult(undefined);
           }}
         >
-          <strong>{a.callsign ?? a.icao24.toUpperCase()}</strong>
+          <strong>{tx(a.callsign ?? a.icao24.toUpperCase())}</strong>
           <span>
-            {a.registration ?? a.icao24.toUpperCase()} · position age at receipt{" "}
-            {Math.round(a.data_age_seconds)}s
+            {tx(a.registration ?? a.icao24.toUpperCase())}{" "}
+            {tx(" · position age at receipt")}
+            {tx(" ")}
+            {tx(Math.round(a.data_age_seconds))}
+            {tx("s")}
           </span>
           <small>
-            Observed {new Date(a.observed_at_utc).toISOString().slice(11, 19)}{" "}
-            UTC
+            {tx("Observed ")}
+            {tx(new Date(a.observed_at_utc).toISOString().slice(11, 19))}
+            {tx(" ")}
+            {tx("UTC")}
           </small>
-          <b>Locate on radar →</b>
+          <b>{tx("Locate on radar →")}</b>
         </button>
       ))}
     </div>

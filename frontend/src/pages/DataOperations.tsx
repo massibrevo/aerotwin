@@ -1,3 +1,4 @@
+import { tx, useLocale, numberLocale } from "../i18n";
 import { useEffect, useState } from "react";
 import { request, post } from "../api";
 import { Panel, State, Badge } from "../components/UI";
@@ -9,6 +10,7 @@ interface Job {
   error?: string;
 }
 export default function DataOperations({ onChange }: { onChange: () => void }) {
+  useLocale();
   const [file, setFile] = useState<File>();
   const [zones, setZones] = useState("{}");
   const [dataset, setDataset] = useState("synthetic");
@@ -50,12 +52,11 @@ export default function DataOperations({ onChange }: { onChange: () => void }) {
   }, []);
   const training = !!job && ["queued", "running"].includes(job.status);
   return (
-    <Panel title="Prepare data & train models">
+    <Panel title={tx("Prepare data & train models")}>
       <p className="muted">
-        Import an official BTS CSV locally, inspect its quality report, then
-        train. No file is sent to an external service. Browser imports are
-        limited to 20 MiB; use the CLI for larger files. Each successful import
-        replaces the active snapshot; previous snapshots remain on disk.
+        {tx(
+          "Import an official BTS CSV locally, inspect its quality report, then train. No file is sent to an external service. Browser imports are limited to 20 MiB; use the CLI for larger files. Each successful import replaces the active snapshot; previous snapshots remain on disk.",
+        )}
       </p>
       <form
         onSubmit={async (e) => {
@@ -85,7 +86,7 @@ export default function DataOperations({ onChange }: { onChange: () => void }) {
               },
             );
             setNotice(
-              `Imported ${result.rows.toLocaleString()} BTS-schema rows; ${result.duplicates_removed} duplicate rows removed. Previous BTS model must be retrained.`,
+              `Imported ${result.rows.toLocaleString(numberLocale())} BTS-schema rows; ${result.duplicates_removed} duplicate rows removed. Previous BTS model must be retrained.`,
             );
             onChange();
           } catch (e) {
@@ -97,9 +98,9 @@ export default function DataOperations({ onChange }: { onChange: () => void }) {
       >
         <div className="form-grid">
           <label>
-            BTS CSV file
+            {tx("BTS CSV file")}
             <input
-              aria-label="BTS CSV file"
+              aria-label={tx("BTS CSV file")}
               type="file"
               accept=".csv,text/csv"
               required
@@ -107,13 +108,13 @@ export default function DataOperations({ onChange }: { onChange: () => void }) {
             />
           </label>
           <label>
-            Additional airport IANA timezones (JSON)
+            {tx("Additional airport IANA timezones (JSON)")}
             <textarea
-              aria-label="Airport timezone mapping"
+              aria-label={tx("Airport timezone mapping")}
               value={zones}
               onChange={(e) => setZones(e.target.value)}
               rows={3}
-              placeholder={'{"SFO":"America/Los_Angeles"}'}
+              placeholder={tx('{"SFO":"America/Los_Angeles"}')}
             />
           </label>
         </div>
@@ -121,19 +122,21 @@ export default function DataOperations({ onChange }: { onChange: () => void }) {
           type="submit"
           disabled={importing || training || starting || !file}
         >
-          {importing ? "Validating and importing…" : "Import BTS CSV locally"}
+          {tx(
+            importing ? "Validating and importing…" : "Import BTS CSV locally",
+          )}
         </button>
       </form>
       <div className="controls-bar" style={{ marginTop: 24 }}>
         <label>
-          Training dataset
+          {tx("Training dataset")}
           <select
-            aria-label="Training dataset"
+            aria-label={tx("Training dataset")}
             value={dataset}
             onChange={(e) => setDataset(e.target.value)}
           >
-            <option value="synthetic">Synthetic demo</option>
-            <option value="bts">Imported BTS</option>
+            <option value="synthetic">{tx("Synthetic demo")}</option>
+            <option value="bts">{tx("Imported BTS")}</option>
           </select>
         </label>
         <button
@@ -153,19 +156,21 @@ export default function DataOperations({ onChange }: { onChange: () => void }) {
             }
           }}
         >
-          {training ? "Training in progress…" : "Train and evaluate model"}
+          {tx(training ? "Training in progress…" : "Train and evaluate model")}
         </button>
       </div>
       {job && (
         <div className="notice" role="status">
-          <Badge>{job.status}</Badge>
-          <span>{job.stage}</span>
-          {training && <progress aria-label="Model training in progress" />}
+          <Badge>{tx(job.status)}</Badge>
+          <span>{tx(job.stage)}</span>
+          {training && (
+            <progress aria-label={tx("Model training in progress")} />
+          )}
         </div>
       )}
       {notice && (
         <div className="notice" role="status">
-          {notice}
+          {tx(notice)}
         </div>
       )}
       <State error={error} />

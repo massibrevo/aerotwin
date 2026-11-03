@@ -1,3 +1,4 @@
+import { tx, useLocale } from "./i18n";
 import {
   addFleetLayers,
   fleetFeatures,
@@ -55,6 +56,7 @@ function RadarMap({
   recenter = 0,
   animateUpdates = false,
 }: Props) {
+  useLocale();
   const u = useUnits();
   const offlineAircraft = useMemo(() => {
     const rows = aircraft.slice(0, 500);
@@ -355,10 +357,10 @@ function RadarMap({
       item.button.classList.toggle("unknown-track", a.track_deg == null);
       item.button.setAttribute(
         "aria-label",
-        `Select ${a.callsign ?? a.icao24}`,
+        tx(`Select ${a.callsign ?? a.icao24}`),
       );
       item.button.setAttribute("aria-pressed", String(a.icao24 === selected));
-      item.button.title = `${a.callsign ?? a.icao24} · ${a.altitude_ft == null ? "Unknown altitude" : u.format(a.altitude_ft, "altitude")} · ${u.format(a.ground_speed_kt, "speed")}`;
+      item.button.title = `${a.callsign ?? a.icao24} · ${a.altitude_ft == null ? tx("Unknown altitude") : u.format(a.altitude_ft, "altitude")} · ${u.format(a.ground_speed_kt, "speed")}`;
       const label = item.button.querySelector(".aircraft-label")!;
       label.textContent = a.callsign ?? a.icao24.toUpperCase();
       (
@@ -454,7 +456,7 @@ function RadarMap({
           ref={host}
           className="online-map"
           data-map-ready={loaded}
-          aria-label="OpenFreeMap street map"
+          aria-label={tx("OpenFreeMap street map")}
         />
       ) : (
         <svg
@@ -462,7 +464,7 @@ function RadarMap({
           viewBox="0 0 1000 640"
           preserveAspectRatio="xMidYMid slice"
           className="map-svg"
-          aria-label="Interactive aircraft radar"
+          aria-label={tx("Interactive aircraft radar")}
           onWheel={(e) =>
             setZoom((z) =>
               Math.max(0.3, Math.min(12, z * (e.deltaY < 0 ? 1.12 : 0.89))),
@@ -516,7 +518,7 @@ function RadarMap({
             className="map-graticule"
             fill="none"
           />
-          {land}
+          {tx(land)}
           {coverage && (
             <path
               className="coverage-ring"
@@ -541,7 +543,7 @@ function RadarMap({
                 <g transform={`translate(${point})`} className="airport-marker">
                   <circle r="7" />
                   <text x="13" y="5">
-                    {region.iata}
+                    {tx(region.iata)}
                   </text>
                 </g>
               )
@@ -564,7 +566,7 @@ function RadarMap({
                 className={`aircraft svg-aircraft ${a.icao24 === selected ? "is-selected" : ""}`}
                 role="button"
                 tabIndex={0}
-                aria-label={`Select ${a.callsign ?? a.icao24}`}
+                aria-label={tx(`Select ${a.callsign ?? a.icao24}`)}
                 aria-pressed={a.icao24 === selected}
                 onClick={() => onSelect(a)}
                 onKeyDown={(e) => {
@@ -593,12 +595,15 @@ function RadarMap({
                 {((labels && offlineLabels.has(a.icao24)) ||
                   a.icao24 === selected) && (
                   <text className="plane-label" x="18" y="-13">
-                    {a.callsign ?? a.icao24.toUpperCase()}
+                    {tx(a.callsign ?? a.icao24.toUpperCase())}
                   </text>
                 )}
                 <title>
-                  {a.callsign} ·{" "}
-                  {a.ground ? "Ground" : u.format(a.altitude_ft, "altitude")}
+                  {tx(a.callsign)} {tx(" ·")}
+                  {tx(" ")}
+                  {tx(
+                    a.ground ? "Ground" : u.format(a.altitude_ft, "altitude"),
+                  )}
                 </title>
               </g>
             );
@@ -607,19 +612,22 @@ function RadarMap({
       )}
       {!online && aircraft.length > 500 && (
         <div className="map-density-note">
-          Offline map: {offlineAircraft.length} of {aircraft.length} aircraft
-          drawn. Use search to narrow the display.
+          {tx(
+            `Offline map: ${offlineAircraft.length} of ${aircraft.length} aircraft drawn. Use search to narrow the display.`,
+          )}
         </div>
       )}
       {online && aircraft.length > 250 && (
         <div className="map-density-note">
-          GPU fleet rendering · keyboard selection available in traffic list
+          {tx(
+            "GPU fleet rendering · keyboard selection available in traffic list",
+          )}
         </div>
       )}
       {online && !loaded && (
         <div className="map-loading" role="status">
           <span />
-          Loading free street map…
+          {tx("Loading free street map…")}
         </div>
       )}
       <div className="map-toolbar">
@@ -629,7 +637,7 @@ function RadarMap({
           className="map-layers-button"
         >
           <Layers size={17} />
-          {online ? (night ? "Dark map" : "Street map") : "Offline map"}
+          {tx(online ? (night ? "Dark map" : "Street map") : "Offline map")}
         </button>
         <button
           className="basemap-toggle"
@@ -638,11 +646,11 @@ function RadarMap({
             setOnline(!online);
           }}
         >
-          {online ? "Use offline map" : "Enable online map"}
+          {tx(online ? "Use offline map" : "Enable online map")}
         </button>
         {menu && (
           <div className="map-layer-menu">
-            <span className="overline">BASEMAP</span>
+            <span className="overline">{tx("BASEMAP")}</span>
             {[
               { label: "Street map", net: true, dark: false },
               { label: "Dark map", net: true, dark: true },
@@ -658,24 +666,24 @@ function RadarMap({
                 }}
               >
                 <MapIcon size={16} />
-                {o.label}
+                {tx(o.label)}
                 {online === o.net && (!online || night === o.dark) && (
                   <Check size={15} />
                 )}
               </button>
             ))}
             <p>
-              OpenFreeMap · OpenStreetMap data
+              {tx("OpenFreeMap · OpenStreetMap data")}
               <br />
-              Offline: Natural Earth, coarse geometry
+              {tx("Offline: Natural Earth, coarse geometry")}
             </p>
           </div>
         )}
       </div>
       <div className="map-zoom">
         <button
-          aria-label="Zoom in"
-          title="Zoom in"
+          aria-label={tx("Zoom in")}
+          title={tx("Zoom in")}
           onClick={() =>
             online
               ? map.current?.zoomIn()
@@ -685,8 +693,8 @@ function RadarMap({
           <Plus size={20} />
         </button>
         <button
-          aria-label="Zoom out"
-          title="Zoom out"
+          aria-label={tx("Zoom out")}
+          title={tx("Zoom out")}
           onClick={() =>
             online
               ? map.current?.zoomOut()
@@ -696,15 +704,15 @@ function RadarMap({
           <Minus size={20} />
         </button>
         <button
-          aria-label="Reset map"
-          title="Fit queried coverage"
+          aria-label={tx("Reset map")}
+          title={tx("Fit queried coverage")}
           onClick={reset}
         >
           <Navigation size={18} />
         </button>
         <button
-          aria-label="Reset map bearing"
-          title="North up"
+          aria-label={tx("Reset map bearing")}
+          title={tx("North up")}
           onClick={() => map.current?.resetNorth()}
           disabled={!online}
         >
@@ -712,13 +720,15 @@ function RadarMap({
         </button>
       </div>
       <div className="map-attribution">
-        {online
-          ? "OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors"
-          : "Natural Earth · Public domain · Offline geography"}
+        {tx(
+          online
+            ? "OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors"
+            : "Natural Earth · Public domain · Offline geography",
+        )}
       </div>
       {mapError && (
         <div className="map-warning" role="status">
-          {mapError}
+          {tx(mapError)}
         </div>
       )}
     </div>

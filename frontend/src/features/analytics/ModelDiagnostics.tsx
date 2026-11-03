@@ -1,3 +1,4 @@
+import { tx, useLocale } from "../../i18n";
 import { useUnits } from "../../units";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -50,87 +51,100 @@ export default function ModelDiagnostics({
   data?: Diagnostics;
   label: string;
 }) {
+  useLocale();
   const u = useUnits();
   const [small, setSmall] = useState(false);
   if (!data)
     return (
-      <Panel title="Extended model diagnostics">
+      <Panel title={tx("Extended model diagnostics")}>
         <p>
-          This model predates the extended evaluation.{" "}
-          <Link to="/data">Train the selected dataset</Link> to compute
-          residuals, subgroup coverage, support shift and paired baseline
-          uncertainty. Existing predictions remain available.
+          {tx("This model predates the extended evaluation.")}
+          {tx(" ")}
+          <Link to="/data">{tx("Train the selected dataset")}</Link>{" "}
+          {tx(
+            " to compute residuals, subgroup coverage, support shift and paired baseline uncertainty. Existing predictions remain available.",
+          )}
         </p>
       </Panel>
     );
   const ci = data.baseline_improvement_block_bootstrap_95;
   return (
-    <div aria-label="Extended model diagnostics">
+    <div aria-label={tx("Extended model diagnostics")}>
       <div className="diagnostic-source">
-        <Badge tone="amber">{label}</Badge>
-        <span>T−120 min · chronological final holdout</span>
+        <Badge tone="amber">{tx(label)}</Badge>
+        <span>{tx("T−120 min · chronological final holdout")}</span>
       </div>
       <div className="stats-row">
         <Stat
-          label="TEST RESIDUAL BIAS"
+          label={tx("TEST RESIDUAL BIAS")}
           value={num(data.bias_minutes, 2)}
           unit=" min"
-          note="Predicted − actual; positive = overprediction"
+          note={tx("Predicted − actual; positive = overprediction")}
         />
         <Stat
-          label="P90 ABSOLUTE ERROR"
+          label={tx("P90 ABSOLUTE ERROR")}
           value={num(data.p90_absolute_error, 2)}
           unit=" min"
-          note={`Median absolute error ${num(data.median_absolute_error, 2)} min`}
+          note={tx(
+            `Median absolute error ${num(data.median_absolute_error, 2)} min`,
+          )}
         />
         <Stat
-          label="MAE IMPROVEMENT VS MEDIAN"
+          label={tx("MAE IMPROVEMENT VS MEDIAN")}
           value={num(data.baseline_mae_improvement_minutes, 2)}
           unit=" min"
-          note="Positive = lower error than the baseline"
+          note={tx("Positive = lower error than the baseline")}
         />
         <Stat
-          label="EVALUATED TEST FLIGHTS"
+          label={tx("EVALUATED TEST FLIGHTS")}
           value={num(data.test_n)}
-          note={`${data.bootstrap_blocks} schedule-date blocks`}
+          note={tx(`${data.bootstrap_blocks} schedule-date blocks`)}
         />
       </div>
-      <Panel title="Evidence against the baseline">
+      <Panel title={tx("Evidence against the baseline")}>
         <p>
-          95% paired daily-block bootstrap interval for MAE improvement:{" "}
+          {tx("95% paired daily-block bootstrap interval for MAE improvement:")}
+          {tx(" ")}
           <strong>
-            {ci
-              ? `${num(ci[0], 2)} to ${num(ci[1], 2)} min`
-              : "Unavailable: fewer than five test dates"}
+            {tx(
+              ci
+                ? `${num(ci[0], 2)} to ${num(ci[1], 2)} min`
+                : "Unavailable: fewer than five test dates",
+            )}
           </strong>
-          .
+          {tx(".")}
         </p>
         <p>
-          {!ci
-            ? "Insufficient date blocks for a bootstrap estimate."
-            : ci[0] > 0
-              ? "The interval is above zero: the selected model has lower measured MAE under this resampling scheme."
-              : ci[1] < 0
-                ? "The interval is below zero: the historical-median baseline performs better on this holdout."
-                : "The interval includes zero: this evaluation does not establish a clear improvement over the baseline."}
+          {tx(
+            !ci
+              ? "Insufficient date blocks for a bootstrap estimate."
+              : ci[0] > 0
+                ? "The interval is above zero: the selected model has lower measured MAE under this resampling scheme."
+                : ci[1] < 0
+                  ? "The interval is below zero: the historical-median baseline performs better on this holdout."
+                  : "The interval includes zero: this evaluation does not establish a clear improvement over the baseline.",
+          )}
         </p>
         <p className="small muted">
-          {data.bootstrap_caveat} {data.bootstrap_repetitions} resamples, seed
-          42.
+          {tx(data.bootstrap_caveat)} {tx(data.bootstrap_repetitions)}{" "}
+          {tx(" resamples, seed 42.")}
         </p>
         <p>
-          Approximate 95% Wilson interval for observed coverage:{" "}
+          {tx("Approximate 95% Wilson interval for observed coverage:")}
+          {tx(" ")}
           <strong>
-            {data.coverage_wilson_95
-              ?.map((v) => num(v * 100, 1) + "%")
-              .join(" → ") ?? "Unavailable"}
+            {tx(
+              data.coverage_wilson_95
+                ?.map((v) => num(v * 100, 1) + "%")
+                .join(" → ") ?? "Unavailable",
+            )}
           </strong>
-          .
+          {tx(".")}
         </p>
-        <p className="small muted">{data.coverage_caveat}</p>
+        <p className="small muted">{tx(data.coverage_caveat)}</p>
       </Panel>
       <div className="two-col">
-        <Panel title="Residual distribution · predicted − actual / min">
+        <Panel title={tx("Residual distribution · predicted − actual / min")}>
           <Chart
             data={data.residual_histogram}
             keys={["flights"]}
@@ -138,16 +152,17 @@ export default function ModelDiagnostics({
             type="bar"
           />
         </Panel>
-        <Panel title="Daily holdout MAE · minutes">
+        <Panel title={tx("Daily holdout MAE · minutes")}>
           <Chart data={data.daily_errors} keys={["mae", "baseline_mae"]} />
           <p className="small muted">
-            mae = selected model · baseline_mae = training historical median.
-            Each point is a date's observed error.
+            {tx(
+              "mae = selected model · baseline_mae = training historical median. Each point is a date's observed error.",
+            )}
           </p>
         </Panel>
       </div>
       <Panel
-        title="Subgroup reliability"
+        title={tx("Subgroup reliability")}
         aside={
           <label className="inline-check">
             <input
@@ -155,7 +170,7 @@ export default function ModelDiagnostics({
               checked={small}
               onChange={(e) => setSmall(e.target.checked)}
             />
-            Include groups below 30
+            {tx("Include groups below 30")}
           </label>
         }
       >
@@ -163,12 +178,12 @@ export default function ModelDiagnostics({
           <table>
             <thead>
               <tr>
-                <th>Dimension / group</th>
-                <th>Test n</th>
-                <th>MAE / min</th>
-                <th>Bias / min</th>
-                <th>Interval coverage</th>
-                <th>Sample</th>
+                <th>{tx("Dimension / group")}</th>
+                <th>{tx("Test n")}</th>
+                <th>{tx("MAE / min")}</th>
+                <th>{tx("Bias / min")}</th>
+                <th>{tx("Interval coverage")}</th>
+                <th>{tx("Sample")}</th>
               </tr>
             </thead>
             <tbody>
@@ -177,40 +192,44 @@ export default function ModelDiagnostics({
                 .map((g) => (
                   <tr key={g.dimension + g.group}>
                     <td>
-                      {g.dimension} / {g.group}
+                      {tx(g.dimension)} {tx(" / ")}
+                      {tx(g.group)}
                     </td>
-                    <td>{g.n}</td>
-                    <td>{num(g.mae, 2)}</td>
-                    <td>{num(g.bias, 2)}</td>
-                    <td>{num(g.coverage * 100, 1)}%</td>
-                    <td>{g.small_sample ? "Small sample" : "≥30"}</td>
+                    <td>{tx(g.n)}</td>
+                    <td>{tx(num(g.mae, 2))}</td>
+                    <td>{tx(num(g.bias, 2))}</td>
+                    <td>
+                      {tx(num(g.coverage * 100, 1))}
+                      {tx("%")}
+                    </td>
+                    <td>{tx(g.small_sample ? "Small sample" : "≥30")}</td>
                   </tr>
                 ))}
             </tbody>
           </table>
         </div>
         <p className="small muted">
-          These are held-out descriptive subgroup metrics, not fairness
-          guarantees or a basis for selecting the model after viewing the test
-          set.
+          {tx(
+            "These are held-out descriptive subgroup metrics, not fairness guarantees or a basis for selecting the model after viewing the test set.",
+          )}
         </p>
       </Panel>
-      <Panel title="Train → test support and distribution shift">
+      <Panel title={tx("Train → test support and distribution shift")}>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Feature</th>
-                <th>Category total variation</th>
-                <th>Unseen test rows</th>
+                <th>{tx("Feature")}</th>
+                <th>{tx("Category total variation")}</th>
+                <th>{tx("Unseen test rows")}</th>
               </tr>
             </thead>
             <tbody>
               {data.categorical_shift.map((r) => (
                 <tr key={r.feature}>
-                  <td>{r.feature}</td>
-                  <td>{num(r.total_variation, 3)}</td>
-                  <td>{r.unseen_test_rows}</td>
+                  <td>{tx(r.feature)}</td>
+                  <td>{tx(num(r.total_variation, 3))}</td>
+                  <td>{tx(r.unseen_test_rows)}</td>
                 </tr>
               ))}
             </tbody>
@@ -218,41 +237,47 @@ export default function ModelDiagnostics({
           <table>
             <thead>
               <tr>
-                <th>Numeric feature</th>
-                <th>Training range</th>
-                <th>Test rows outside range</th>
+                <th>{tx("Numeric feature")}</th>
+                <th>{tx("Training range")}</th>
+                <th>{tx("Test rows outside range")}</th>
               </tr>
             </thead>
             <tbody>
               {data.numeric_support.map((r) => (
                 <tr key={r.feature}>
                   <td>
-                    {r.feature}
-                    {r.feature === "distance"
-                      ? ` / ${u.label("routeDistance")}`
-                      : ""}
+                    {tx(r.feature)}
+                    {tx(
+                      r.feature === "distance"
+                        ? ` / ${u.label("routeDistance")}`
+                        : "",
+                    )}
                   </td>
                   <td>
-                    {r.feature === "distance"
-                      ? u.number(r.train_min, "routeDistance", 1)
-                      : num(r.train_min, 1)}{" "}
-                    →{" "}
-                    {r.feature === "distance"
-                      ? u.number(r.train_max, "routeDistance", 1)
-                      : num(r.train_max, 1)}
+                    {tx(
+                      r.feature === "distance"
+                        ? u.number(r.train_min, "routeDistance", 1)
+                        : num(r.train_min, 1),
+                    )}
+                    {tx(" ")}
+                    {tx("→")}
+                    {tx(" ")}
+                    {tx(
+                      r.feature === "distance"
+                        ? u.number(r.train_max, "routeDistance", 1)
+                        : num(r.train_max, 1),
+                    )}
                   </td>
-                  <td>{r.test_outside_range}</td>
+                  <td>{tx(r.test_outside_range)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <p className="small muted">
-          Total variation ranges from 0 (same category frequencies) to 1
-          (disjoint). This is covariate shift, not proof of performance drift.
-          Calendar features may naturally move outside training ranges. Numeric
-          JSON model-report ranges retain source units; displayed distance
-          follows your unit settings.
+          {tx(
+            "Total variation ranges from 0 (same category frequencies) to 1 (disjoint). This is covariate shift, not proof of performance drift. Calendar features may naturally move outside training ranges. Numeric JSON model-report ranges retain source units; displayed distance follows your unit settings.",
+          )}
         </p>
       </Panel>
     </div>

@@ -1,9 +1,11 @@
+import { tx, useLocale } from "../i18n";
 import { useEffect, useState } from "react";
 import { GitBranch, SlidersHorizontal } from "lucide-react";
 import { useApi, post } from "../api";
 import type { Network, Simulation } from "../types";
 import { Badge, State, Stat, Panel, Chart, num } from "../components/UI";
 export default function Simulator({ dataset }: { dataset: string }) {
+  useLocale();
   const network = useApi<Network>("/network?dataset=" + dataset);
   const [airport, setAirport] = useState("ATL");
   const [reduction, setReduction] = useState(40);
@@ -33,20 +35,24 @@ export default function Simulator({ dataset }: { dataset: string }) {
       <div className="notice">
         <GitBranch size={17} />
         <span>
-          SIMULATION · Hypothetical capacity shock with stylized connection
-          assumptions. Outputs are computed, not operational forecasts or
-          identified causal effects.
+          {tx(
+            "SIMULATION · Hypothetical capacity shock with stylized connection assumptions. Outputs are computed, not operational forecasts or identified causal effects.",
+          )}
         </span>
       </div>
       <div className="scenario-grid">
         <Panel
-          title="Route network"
-          aside={<Badge tone="amber">{dataset.toUpperCase()} NETWORK</Badge>}
+          title={tx("Route network")}
+          aside={
+            <Badge tone="amber">
+              {tx(dataset.toUpperCase())} {tx(" NETWORK")}
+            </Badge>
+          }
         >
           <svg
             viewBox="0 0 620 420"
             className="network-svg"
-            aria-label="Airport network graph"
+            aria-label={tx("Airport network graph")}
           >
             {network.data?.edges.map((e) => (
               <line
@@ -70,7 +76,7 @@ export default function Simulator({ dataset }: { dataset: string }) {
                 transform={`translate(${coords[n.iata]})`}
                 role="button"
                 tabIndex={0}
-                aria-label={`Simulate ${n.iata}`}
+                aria-label={tx(`Simulate ${n.iata}`)}
                 className="network-node"
                 onClick={() => setAirport(n.iata)}
                 onKeyDown={(e) => {
@@ -83,21 +89,22 @@ export default function Simulator({ dataset }: { dataset: string }) {
                   stroke={n.iata === airport ? "#48c7dd" : "#405366"}
                 />
                 <text textAnchor="middle" y="4" fill="#e1edf5" fontSize="13">
-                  {n.iata}
+                  {tx(n.iata)}
                 </text>
                 <text textAnchor="middle" y="49" fill="#8296a7" fontSize="10">
-                  {num(n.traffic)} route observations
+                  {tx(num(n.traffic))} {tx(" route observations")}
                 </text>
               </g>
             ))}
           </svg>
           <p className="small muted">
-            {network.data?.risk_definition} ·{" "}
-            {network.data?.coverage.join(" → ")}
+            {tx(network.data?.risk_definition)} {tx(" ·")}
+            {tx(" ")}
+            {tx(network.data?.coverage.join(" → "))}
           </p>
         </Panel>
         <Panel
-          title="Configure intervention"
+          title={tx("Configure intervention")}
           aside={<SlidersHorizontal size={17} />}
         >
           <form
@@ -125,21 +132,25 @@ export default function Simulator({ dataset }: { dataset: string }) {
             }}
           >
             <label>
-              Affected airport
+              {tx("Affected airport")}
               <select
-                aria-label="Scenario airport"
+                aria-label={tx("Scenario airport")}
                 value={airport}
                 onChange={(e) => setAirport(e.target.value)}
               >
                 {nodes.map((n) => (
-                  <option key={n.iata}>{n.iata}</option>
+                  <option key={n.iata}>{tx(n.iata)}</option>
                 ))}
               </select>
             </label>
             <label className="range-label">
-              Capacity reduction<strong>{reduction}%</strong>
+              {tx("Capacity reduction")}
+              <strong>
+                {tx(reduction)}
+                {tx("%")}
+              </strong>
               <input
-                aria-label="Capacity reduction"
+                aria-label={tx("Capacity reduction")}
                 type="range"
                 min="0"
                 max="70"
@@ -148,9 +159,12 @@ export default function Simulator({ dataset }: { dataset: string }) {
               />
             </label>
             <label className="range-label">
-              Disruption duration<strong>{duration} min</strong>
+              {tx("Disruption duration")}
+              <strong>
+                {tx(duration)} {tx(" min")}
+              </strong>
               <input
-                aria-label="Disruption duration"
+                aria-label={tx("Disruption duration")}
                 type="range"
                 min="15"
                 max="360"
@@ -161,9 +175,9 @@ export default function Simulator({ dataset }: { dataset: string }) {
             </label>
             <div className="form-grid">
               <label>
-                Replications
+                {tx("Replications")}
                 <input
-                  aria-label="Replications"
+                  aria-label={tx("Replications")}
                   type="number"
                   min="1"
                   max="100"
@@ -172,9 +186,9 @@ export default function Simulator({ dataset }: { dataset: string }) {
                 />
               </label>
               <label>
-                Random seed
+                {tx("Random seed")}
                 <input
-                  aria-label="Random seed"
+                  aria-label={tx("Random seed")}
                   type="number"
                   min="0"
                   max="4294967295"
@@ -189,47 +203,50 @@ export default function Simulator({ dataset }: { dataset: string }) {
               className="primary wide"
             >
               <GitBranch size={16} />
-              {busy ? "Running paired simulations…" : "Run simulation"}
+              {tx(busy ? "Running paired simulations…" : "Run simulation")}
             </button>
-            {busy && <progress aria-label="Simulation running" />}
+            {busy && <progress aria-label={tx("Simulation running")} />}
           </form>
           <State error={error} />
           <p className="small muted">
-            Paired baseline and intervention use identical arrivals and service
-            draws for each seed. Zero capacity loss produces identical outcomes.
+            {tx(
+              "Paired baseline and intervention use identical arrivals and service draws for each seed. Zero capacity loss produces identical outcomes.",
+            )}
           </p>
         </Panel>
       </div>
       {result && (
-        <div aria-label="Simulation results">
+        <div aria-label={tx("Simulation results")}>
           <div className="stats-row">
             <Stat
-              label="BASELINE QUEUE DELAY"
+              label={tx("BASELINE QUEUE DELAY")}
               value={num(result.baseline_mean_minutes, 1)}
               unit=" min"
             />
             <Stat
-              label="SCENARIO QUEUE DELAY"
+              label={tx("SCENARIO QUEUE DELAY")}
               value={num(result.scenario_mean_minutes, 1)}
               unit=" min"
             />
             <Stat
-              label="ADDITIONAL DELAY"
+              label={tx("ADDITIONAL DELAY")}
               value={num(result.additional_delay_minutes, 1)}
               unit=" min"
-              note={`Replication P10–P90: ${result.delta_p10_p90.map((v) => num(v, 1)).join("–")} min`}
+              note={tx(
+                `Replication P10–P90: ${result.delta_p10_p90.map((v) => num(v, 1)).join("–")} min`,
+              )}
             />
             <Stat
-              label="STYLIZED DOWNSTREAM DELAY"
+              label={tx("STYLIZED DOWNSTREAM DELAY")}
               value={num(result.downstream_mean_minutes, 1)}
               unit=" min"
-              note="Assumed 20–60 min connection slack"
+              note={tx("Assumed 20–60 min connection slack")}
             />
           </div>
           <div className="two-col">
             <Panel
-              title="Queue delay · first replication"
-              aside={<span className="tiny">MINUTES BY HOUR</span>}
+              title={tx("Queue delay · first replication")}
+              aside={<span className="tiny">{tx("MINUTES BY HOUR")}</span>}
             >
               <Chart
                 data={result.chart}
@@ -237,7 +254,7 @@ export default function Simulator({ dataset }: { dataset: string }) {
                 keys={["baseline", "scenario"]}
               />
             </Panel>
-            <Panel title="Additional delay by replication">
+            <Panel title={tx("Additional delay by replication")}>
               <Chart
                 data={result.replication_deltas.map((delta, i) => ({
                   replication: i + 1,
@@ -249,39 +266,43 @@ export default function Simulator({ dataset }: { dataset: string }) {
               />
             </Panel>
           </div>
-          <Panel title="Assumptions & reproducibility">
+          <Panel title={tx("Assumptions & reproducibility")}>
             <ul className="assumptions">
               {result.assumptions.map((a) => (
-                <li key={a}>{a}</li>
+                <li key={a}>{tx(a)}</li>
               ))}
             </ul>
             <p className="small muted">
-              Seed {result.seed} · {result.repetitions} replications · Peak
-              in-system aircraft {result.peak_queue_aircraft} · Run {result.id}
+              {tx("Seed ")}
+              {tx(result.seed)} {tx(" · ")}
+              {tx(result.repetitions)}{" "}
+              {tx(" replications · Peak in-system aircraft ")}
+              {tx(result.peak_queue_aircraft)} {tx(" · Run ")}
+              {tx(result.id)}
             </p>
           </Panel>
         </div>
       )}
-      <Panel title="Network diagnostics">
+      <Panel title={tx("Network diagnostics")}>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Airport</th>
-                <th>Directed degree</th>
-                <th>Betweenness</th>
-                <th>Traffic observations</th>
-                <th>Descriptive risk index</th>
+                <th>{tx("Airport")}</th>
+                <th>{tx("Directed degree")}</th>
+                <th>{tx("Betweenness")}</th>
+                <th>{tx("Traffic observations")}</th>
+                <th>{tx("Descriptive risk index")}</th>
               </tr>
             </thead>
             <tbody>
               {nodes.map((n) => (
                 <tr key={n.iata}>
-                  <td>{n.iata}</td>
-                  <td>{n.degree}</td>
-                  <td>{num(n.betweenness, 4)}</td>
-                  <td>{num(n.traffic)}</td>
-                  <td>{num(n.risk_index, 4)}</td>
+                  <td>{tx(n.iata)}</td>
+                  <td>{tx(n.degree)}</td>
+                  <td>{tx(num(n.betweenness, 4))}</td>
+                  <td>{tx(num(n.traffic))}</td>
+                  <td>{tx(num(n.risk_index, 4))}</td>
                 </tr>
               ))}
             </tbody>

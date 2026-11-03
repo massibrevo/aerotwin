@@ -1,3 +1,4 @@
+import { tx, useLocale } from "../i18n";
 import RecordingControls from "../features/radar/RecordingControls";
 import { useFavourites } from "../features/radar/favourites";
 import LiveLookup from "../features/radar/LiveLookup";
@@ -37,6 +38,7 @@ import { Badge, num } from "../components/UI";
 import { useObservedTrail } from "../features/radar/useObservedTrail";
 
 export default function Radar(p: RadarProps) {
+  useLocale();
   const u = useUnits();
   const favourites = useFavourites();
   const [animateUpdates, setAnimateUpdates] = useState(false);
@@ -134,9 +136,9 @@ export default function Radar(p: RadarProps) {
   return (
     <section
       className={`radar-workspace ${expanded ? "radar-expanded" : ""}`}
-      aria-label="Radar workspace"
+      aria-label={tx("Radar workspace")}
     >
-      <h1 className="sr-only">Live radar</h1>
+      <h1 className="sr-only">{tx("Live radar")}</h1>
       <RadarMap
         aircraft={rows}
         region={region}
@@ -158,9 +160,9 @@ export default function Radar(p: RadarProps) {
             <MapPin size={19} />
           </span>
           <label>
-            <span>EXPLORE AIRSPACE</span>
+            <span>{tx("EXPLORE AIRSPACE")}</span>
             <select
-              aria-label="Radar region"
+              aria-label={tx("Radar region")}
               value={p.region.iata}
               disabled={p.mode === "replay" || p.mode === "recorded"}
               onChange={(e) => {
@@ -170,28 +172,32 @@ export default function Radar(p: RadarProps) {
             >
               {presets.map((r) => (
                 <option key={r.iata} value={r.iata}>
-                  {r.name} · {r.iata}
+                  {tx(r.name)} {tx(" · ")}
+                  {tx(r.iata)}
                 </option>
               ))}
               {p.region.iata === "CUSTOM" && (
-                <option value="CUSTOM">Custom region</option>
+                <option value="CUSTOM">{tx("Custom region")}</option>
               )}
             </select>
           </label>
           <span className="location-radius">
-            {u.number(p.radius, "distance")}
-            <small>{u.label("distance")}</small>
+            {tx(u.number(p.radius, "distance"))}
+            <small>{tx(u.label("distance"))}</small>
           </span>
           <button
             disabled={p.mode === "recorded"}
-            aria-label="Custom region"
-            title="Custom geography"
+            aria-label={tx("Custom region")}
+            title={tx("Custom geography")}
             onClick={() => setCustom(!custom)}
           >
             <Settings2 size={17} />
           </button>
         </div>
-        <div className="radar-mode-switch" aria-label="Aircraft data mode">
+        <div
+          className="radar-mode-switch"
+          aria-label={tx("Aircraft data mode")}
+        >
           {(["demo", "live", "replay"] as Mode[]).map((m) => (
             <button
               key={m}
@@ -207,29 +213,31 @@ export default function Radar(p: RadarProps) {
                 <Plane size={15} />
               )}
               <span>
-                {m === "demo"
-                  ? "Synthetic demo"
-                  : m === "live"
-                    ? "Live ADS-B"
-                    : "Replay"}
+                {tx(
+                  m === "demo"
+                    ? "Synthetic demo"
+                    : m === "live"
+                      ? "Live ADS-B"
+                      : "Replay",
+                )}
               </span>
             </button>
           ))}
         </div>
         <div className="radar-view-tools">
           <button
-            aria-label="Toggle traffic panel"
-            title="Show or hide aircraft panel"
+            aria-label={tx("Toggle traffic panel")}
+            title={tx("Show or hide aircraft panel")}
             aria-pressed={listOpen}
             onClick={() => setListOpen(!listOpen)}
           >
             <Plane size={18} />
-            <span>Traffic</span>
-            <b>{rows.length}</b>
+            <span>{tx("Traffic")}</span>
+            <b>{tx(rows.length)}</b>
           </button>
           <button
-            aria-label={expanded ? "Exit expanded radar" : "Expand radar"}
-            title={expanded ? "Exit expanded view" : "Expand map"}
+            aria-label={tx(expanded ? "Exit expanded radar" : "Expand radar")}
+            title={tx(expanded ? "Exit expanded view" : "Expand map")}
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
@@ -273,10 +281,10 @@ export default function Radar(p: RadarProps) {
             }}
           >
             <div className="floating-heading">
-              <h2>Choose your airspace</h2>
+              <h2>{tx("Choose your airspace")}</h2>
               <button
                 type="button"
-                aria-label="Close geography"
+                aria-label={tx("Close geography")}
                 onClick={() => setCustom(false)}
               >
                 <X size={17} />
@@ -284,9 +292,9 @@ export default function Radar(p: RadarProps) {
             </div>
             <div className="form-grid">
               <label>
-                Latitude
+                {tx("Latitude")}
                 <input
-                  aria-label="Custom latitude"
+                  aria-label={tx("Custom latitude")}
                   type="number"
                   step=".001"
                   value={lat}
@@ -294,9 +302,9 @@ export default function Radar(p: RadarProps) {
                 />
               </label>
               <label>
-                Longitude
+                {tx("Longitude")}
                 <input
-                  aria-label="Custom longitude"
+                  aria-label={tx("Custom longitude")}
                   type="number"
                   step=".001"
                   value={lon}
@@ -304,9 +312,10 @@ export default function Radar(p: RadarProps) {
                 />
               </label>
               <label>
-                Radius / {u.label("distance")}
+                {tx("Radius / ")}
+                {tx(u.label("distance"))}
                 <input
-                  aria-label="Custom radius"
+                  aria-label={tx("Custom radius")}
                   type="number"
                   min={u.convert(1, "distance")}
                   max={u.convert(250, "distance")}
@@ -319,9 +328,9 @@ export default function Radar(p: RadarProps) {
               </label>
             </div>
             <button className="primary wide" type="submit">
-              Apply geography
+              {tx("Apply geography")}
             </button>
-            {formError && <p role="alert">{formError}</p>}
+            {formError && <p role="alert">{tx(formError)}</p>}
           </motion.form>
         )}
       </AnimatePresence>
@@ -329,9 +338,13 @@ export default function Radar(p: RadarProps) {
         <span
           className={`signal-dot ${p.mode === "live" ? "" : "demo-signal"}`}
         />
-        {status}
-        <span className="caption-separator" /> {rows.length} shown{" "}
-        <span className="muted">of {p.snapshot?.aircraft.length ?? 0}</span>
+        {tx(status)}
+        <span className="caption-separator" /> {tx(rows.length)} {tx(" shown")}
+        {tx(" ")}
+        <span className="muted">
+          {tx("of ")}
+          {tx(p.snapshot?.aircraft.length ?? 0)}
+        </span>
       </div>
       <AnimatePresence>
         {listOpen && (
@@ -341,7 +354,9 @@ export default function Radar(p: RadarProps) {
             exit={{ opacity: 0, x: -14 }}
             transition={{ duration: 0.2 }}
             className={`radar-traffic-panel floating-panel ${picked ? "has-selection" : ""}`}
-            aria-label={picked ? "Aircraft inspector" : "Traffic in coverage"}
+            aria-label={tx(
+              picked ? "Aircraft inspector" : "Traffic in coverage",
+            )}
           >
             {picked ? (
               <>
@@ -354,10 +369,10 @@ export default function Radar(p: RadarProps) {
                     }}
                   >
                     <ArrowLeft size={15} />
-                    All aircraft
+                    {tx("All aircraft")}
                   </button>
                   <button
-                    aria-label="Close inspector"
+                    aria-label={tx("Close inspector")}
                     onClick={() => {
                       p.setSelected(undefined);
                       setFollow(false);
@@ -372,14 +387,14 @@ export default function Radar(p: RadarProps) {
                       picked,
                       p.mode === "recorded" ? "live" : p.mode,
                     )}
-                    aria-label={
+                    aria-label={tx(
                       favourites.has(
                         picked,
                         p.mode === "recorded" ? "live" : p.mode,
                       )
                         ? "Remove aircraft from favourites"
-                        : "Save aircraft to favourites"
-                    }
+                        : "Save aircraft to favourites",
+                    )}
                     onClick={() =>
                       favourites.toggle(
                         picked,
@@ -398,26 +413,32 @@ export default function Radar(p: RadarProps) {
                           : "none"
                       }
                     />
-                    {favourites.has(
-                      picked,
-                      p.mode === "recorded" ? "live" : p.mode,
-                    )
-                      ? "Saved aircraft"
-                      : "Save aircraft"}
+                    {tx(
+                      favourites.has(
+                        picked,
+                        p.mode === "recorded" ? "live" : p.mode,
+                      )
+                        ? "Saved aircraft"
+                        : "Save aircraft",
+                    )}
                   </button>
                 </div>
-                {favourites.error && <p role="alert">{favourites.error}</p>}
+                {favourites.error && <p role="alert">{tx(favourites.error)}</p>}
                 <div className="flight-identity">
                   <div>
-                    <span className="overline">AIRCRAFT OBSERVATION</span>
-                    <h2>{picked.callsign ?? picked.icao24.toUpperCase()}</h2>
+                    <span className="overline">
+                      {tx("AIRCRAFT OBSERVATION")}
+                    </span>
+                    <h2>
+                      {tx(picked.callsign ?? picked.icao24.toUpperCase())}
+                    </h2>
                     <div className="flight-tags">
-                      <span>{picked.icao24.toUpperCase()}</span>
+                      <span>{tx(picked.icao24.toUpperCase())}</span>
                       {picked.aircraft_type && (
-                        <span>{picked.aircraft_type}</span>
+                        <span>{tx(picked.aircraft_type)}</span>
                       )}
                       <Badge tone={p.mode === "live" ? "cyan" : "amber"}>
-                        {picked.provider}
+                        {tx(picked.provider)}
                       </Badge>
                     </div>
                   </div>
@@ -432,26 +453,30 @@ export default function Radar(p: RadarProps) {
                 />
                 <div className="flight-metrics">
                   <div>
-                    <span>ALTITUDE</span>
+                    <span>{tx("ALTITUDE")}</span>
                     <strong>
-                      {picked.ground
-                        ? "Ground"
-                        : u.number(picked.altitude_ft, "altitude")}
-                      <small>{picked.ground ? "" : u.label("altitude")}</small>
+                      {tx(
+                        picked.ground
+                          ? "Ground"
+                          : u.number(picked.altitude_ft, "altitude"),
+                      )}
+                      <small>
+                        {tx(picked.ground ? "" : u.label("altitude"))}
+                      </small>
                     </strong>
                   </div>
                   <div>
-                    <span>GROUND SPEED</span>
+                    <span>{tx("GROUND SPEED")}</span>
                     <strong>
-                      {u.number(picked.ground_speed_kt, "speed")}
-                      <small>{u.label("speed")}</small>
+                      {tx(u.number(picked.ground_speed_kt, "speed"))}
+                      <small>{tx(u.label("speed"))}</small>
                     </strong>
                   </div>
                   <div>
-                    <span>TRACK</span>
+                    <span>{tx("TRACK")}</span>
                     <strong>
-                      {num(picked.track_deg)}
-                      <small>°</small>
+                      {tx(num(picked.track_deg))}
+                      <small>{tx("°")}</small>
                     </strong>
                   </div>
                 </div>
@@ -463,16 +488,19 @@ export default function Radar(p: RadarProps) {
                       <ArrowDownRight size={17} />
                     ) : (
                       <Minus size={17} />
-                    )}{" "}
-                    {picked.vertical_rate_fpm == null
-                      ? "Vertical rate unknown"
-                      : (picked.vertical_rate_fpm ?? 0) > 300
-                        ? "Climbing"
-                        : (picked.vertical_rate_fpm ?? 0) < -300
-                          ? "Descending"
-                          : "Level / low vertical rate"}
+                    )}
+                    {tx(" ")}
+                    {tx(
+                      picked.vertical_rate_fpm == null
+                        ? "Vertical rate unknown"
+                        : (picked.vertical_rate_fpm ?? 0) > 300
+                          ? "Climbing"
+                          : (picked.vertical_rate_fpm ?? 0) < -300
+                            ? "Descending"
+                            : "Level / low vertical rate",
+                    )}
                   </span>
-                  <b>{u.format(picked.vertical_rate_fpm, "vertical")}</b>
+                  <b>{tx(u.format(picked.vertical_rate_fpm, "vertical"))}</b>
                 </div>
                 <div className="flight-card-actions">
                   <button
@@ -481,7 +509,7 @@ export default function Radar(p: RadarProps) {
                     onClick={() => setFollow(!follow)}
                   >
                     <Crosshair size={16} />
-                    {follow ? "Following" : "Follow aircraft"}
+                    {tx(follow ? "Following" : "Follow aircraft")}
                   </button>
                   <button
                     className={showTrail ? "active" : ""}
@@ -489,32 +517,40 @@ export default function Radar(p: RadarProps) {
                     onClick={() => setShowTrail(!showTrail)}
                   >
                     <Route size={16} />
-                    Observed trail
+                    {tx("Observed trail")}
                   </button>
                 </div>
                 <dl className="flight-details">
                   <div>
-                    <dt>Position</dt>
+                    <dt>{tx("Position")}</dt>
                     <dd>
-                      {picked.lat.toFixed(4)}°, {picked.lon.toFixed(4)}°
+                      {tx(picked.lat.toFixed(4))}
+                      {tx("°, ")}
+                      {tx(picked.lon.toFixed(4))}
+                      {tx("°")}
                     </dd>
                   </div>
                   <div>
-                    <dt>Observed / UTC</dt>
+                    <dt>{tx("Observed / UTC")}</dt>
                     <dd>
-                      {new Date(picked.observed_at_utc)
-                        .toISOString()
-                        .slice(11, 19)}
+                      {tx(
+                        new Date(picked.observed_at_utc)
+                          .toISOString()
+                          .slice(11, 19),
+                      )}
                     </dd>
                   </div>
                   <div>
-                    <dt>Position age at receipt</dt>
-                    <dd>{num(picked.data_age_seconds, 1)} s</dd>
+                    <dt>{tx("Position age at receipt")}</dt>
+                    <dd>
+                      {tx(num(picked.data_age_seconds, 1))} {tx(" s")}
+                    </dd>
                   </div>
                   <div>
-                    <dt>Trail in this session</dt>
+                    <dt>{tx("Trail in this session")}</dt>
                     <dd>
-                      {trail.length} observation{trail.length === 1 ? "" : "s"}
+                      {tx(trail.length)} {tx(" observation")}
+                      {tx(trail.length === 1 ? "" : "s")}
                     </dd>
                   </div>
                 </dl>
@@ -526,8 +562,9 @@ export default function Radar(p: RadarProps) {
                 <p className="flight-disclaimer">
                   <Info size={14} />
                   <span>
-                    Positions only. No verified origin, destination or schedule.
-                    Trails connect this session’s observations.
+                    {tx(
+                      "Positions only. No verified origin, destination or schedule. Trails connect this session’s observations.",
+                    )}
                   </span>
                 </p>
               </>
@@ -535,39 +572,40 @@ export default function Radar(p: RadarProps) {
               <>
                 <div className="traffic-heading">
                   <div>
-                    <span className="overline">YOUR AIRSPACE</span>
+                    <span className="overline">{tx("YOUR AIRSPACE")}</span>
                     <h2>
-                      Air traffic <span>{rows.length}</span>
+                      {tx("Air traffic ")}
+                      <span>{tx(rows.length)}</span>
                     </h2>
                   </div>
                   <button
                     className={activeFilters || filters ? "active" : ""}
-                    aria-label="Aircraft filters"
+                    aria-label={tx("Aircraft filters")}
                     aria-expanded={filters}
                     onClick={() => setFilters(!filters)}
                   >
                     <SlidersHorizontal size={18} />
-                    {activeFilters > 0 && <b>{activeFilters}</b>}
+                    {activeFilters > 0 && <b>{tx(activeFilters)}</b>}
                   </button>
                 </div>
                 <div className="radar-search">
                   <Search size={18} />
                   <input
                     ref={searchRef}
-                    aria-label="Search aircraft"
-                    placeholder="Callsign, registration or ICAO hex…"
+                    aria-label={tx("Search aircraft")}
+                    placeholder={tx("Callsign, registration or ICAO hex…")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
                   {search ? (
                     <button
-                      aria-label="Clear aircraft search"
+                      aria-label={tx("Clear aircraft search")}
                       onClick={() => setSearch("")}
                     >
                       <X size={15} />
                     </button>
                   ) : (
-                    <kbd>/</kbd>
+                    <kbd>{tx("/")}</kbd>
                   )}
                 </div>
                 <div className="traffic-tabs">
@@ -575,18 +613,20 @@ export default function Radar(p: RadarProps) {
                     aria-pressed={!savedOnly}
                     onClick={() => setSavedOnly(false)}
                   >
-                    In coverage
+                    {tx("In coverage")}
                   </button>
                   <button
                     aria-pressed={savedOnly}
                     onClick={() => setSavedOnly(true)}
                   >
-                    Favourites ({favourites.favourites.length})
+                    {tx("Favourites (")}
+                    {tx(favourites.favourites.length)}
+                    {tx(")")}
                   </button>
                 </div>
                 {p.focusError && (
                   <p className="lookup-warning" role="alert">
-                    {p.focusError}
+                    {tx(p.focusError)}
                   </p>
                 )}
                 {p.mode === "live" && !savedOnly && (
@@ -599,11 +639,15 @@ export default function Radar(p: RadarProps) {
                   />
                 )}
                 {savedOnly && (
-                  <div className="saved-aircraft" aria-label="Saved aircraft">
+                  <div
+                    className="saved-aircraft"
+                    aria-label={tx("Saved aircraft")}
+                  >
                     {!favourites.favourites.length && (
                       <p>
-                        Save aircraft from their observation card. Favourites
-                        stay on this browser; positions are not stored.
+                        {tx(
+                          "Save aircraft from their observation card. Favourites stay on this browser; positions are not stored.",
+                        )}
                       </p>
                     )}
                     {favourites.favourites
@@ -621,17 +665,22 @@ export default function Radar(p: RadarProps) {
                             : undefined;
                         return (
                           <div key={`${f.mode}:${f.icao24}`}>
-                            <strong>{f.label}</strong>
+                            <strong>{tx(f.label)}</strong>
                             <small>
-                              {f.registration ?? f.icao24.toUpperCase()} ·{" "}
-                              {f.mode.toUpperCase()} ·{" "}
-                              {observed
-                                ? "In current snapshot"
-                                : "Not in current snapshot"}
+                              {tx(f.registration ?? f.icao24.toUpperCase())}{" "}
+                              {tx(" ·")}
+                              {tx(" ")}
+                              {tx(f.mode.toUpperCase())} {tx(" ·")}
+                              {tx(" ")}
+                              {tx(
+                                observed
+                                  ? "In current snapshot"
+                                  : "Not in current snapshot",
+                              )}
                             </small>
                             {observed ? (
                               <button onClick={() => p.setSelected(observed)}>
-                                Inspect saved aircraft
+                                {tx("Inspect saved aircraft")}
                               </button>
                             ) : f.mode === "live" && p.mode === "live" ? (
                               <button
@@ -640,30 +689,33 @@ export default function Radar(p: RadarProps) {
                                   setSearch(f.icao24);
                                 }}
                               >
-                                Find live position
+                                {tx("Find live position")}
                               </button>
                             ) : (
                               <span className="muted">
-                                Switch to {f.mode} to inspect this favourite.
+                                {tx("Switch to ")}
+                                {tx(f.mode)} {tx(" to inspect this favourite.")}
                               </span>
                             )}
                             <button
-                              aria-label={`Remove favourite ${f.label}`}
+                              aria-label={tx(`Remove favourite ${f.label}`)}
                               onClick={() => favourites.remove(f)}
                             >
-                              Remove
+                              {tx("Remove")}
                             </button>
                           </div>
                         );
                       })}
-                    {favourites.error && <p role="alert">{favourites.error}</p>}
+                    {favourites.error && (
+                      <p role="alert">{tx(favourites.error)}</p>
+                    )}
                   </div>
                 )}
                 {filters && (
                   <div className="traffic-filters">
                     <div className="floating-heading">
-                      <h3>Filter observations</h3>
-                      <button onClick={resetFilters}>Reset</button>
+                      <h3>{tx("Filter observations")}</h3>
+                      <button onClick={resetFilters}>{tx("Reset")}</button>
                     </div>
                     {[
                       {
@@ -695,10 +747,10 @@ export default function Radar(p: RadarProps) {
                       },
                     ].map((c) => (
                       <label className="range-label" key={c.label}>
-                        {c.name}
-                        <strong>{u.format(c.value, c.kind)}</strong>
+                        {tx(c.name)}
+                        <strong>{tx(u.format(c.value, c.kind))}</strong>
                         <input
-                          aria-label={c.label}
+                          aria-label={tx(c.label)}
                           aria-valuetext={u.format(c.value, c.kind)}
                           type="range"
                           min="0"
@@ -711,7 +763,7 @@ export default function Radar(p: RadarProps) {
                     ))}
                     {minAlt > maxAlt && (
                       <p className="field-error">
-                        Minimum altitude exceeds maximum.
+                        {tx("Minimum altitude exceeds maximum.")}
                       </p>
                     )}
                   </div>
@@ -719,8 +771,8 @@ export default function Radar(p: RadarProps) {
                 {!savedOnly && (
                   <>
                     <div className="traffic-column-head">
-                      <span>AIRCRAFT</span>
-                      <span>ALTITUDE / SPEED</span>
+                      <span>{tx("AIRCRAFT")}</span>
+                      <span>{tx("ALTITUDE / SPEED")}</span>
                     </div>
                     <div className="aircraft-scroll">
                       {rows.slice(0, rowLimit).map((a) => (
@@ -739,24 +791,27 @@ export default function Radar(p: RadarProps) {
                           </span>
                           <span>
                             <strong>
-                              {a.callsign ?? a.icao24.toUpperCase()}
+                              {tx(a.callsign ?? a.icao24.toUpperCase())}
                             </strong>
                             <small>
-                              {a.aircraft_type ?? a.icao24.toUpperCase()}
-                              {a.registration ? " · " + a.registration : ""}
+                              {tx(a.aircraft_type ?? a.icao24.toUpperCase())}
+                              {tx(a.registration ? " · " + a.registration : "")}
                             </small>
                           </span>
                           <span>
                             <strong>
-                              {a.ground
-                                ? "Ground"
-                                : u.number(a.altitude_ft, "altitude")}
+                              {tx(
+                                a.ground
+                                  ? "Ground"
+                                  : u.number(a.altitude_ft, "altitude"),
+                              )}
                               <small className="inline-unit">
-                                {a.ground ? "" : ` ${u.label("altitude")}`}
+                                {tx(a.ground ? "" : ` ${u.label("altitude")}`)}
                               </small>
                             </strong>
                             <small>
-                              {u.format(a.ground_speed_kt, "speed")}{" "}
+                              {tx(u.format(a.ground_speed_kt, "speed"))}
+                              {tx(" ")}
                               <ChevronRight size={11} />
                             </small>
                           </span>
@@ -767,26 +822,32 @@ export default function Radar(p: RadarProps) {
                           className="wide"
                           onClick={() => setRowLimit((n) => n + 200)}
                         >
-                          Show next 200 aircraft ({rows.length - rowLimit}{" "}
-                          remaining)
+                          {tx("Show next 200 aircraft (")}
+                          {tx(rows.length - rowLimit)}
+                          {tx(" ")}
+                          {tx("remaining)")}
                         </button>
                       )}
                       {!rows.length && (
                         <div className="traffic-empty">
                           <Search size={24} />
                           <h3>
-                            {waiting
-                              ? "Loading observations…"
-                              : "No aircraft to display"}
+                            {tx(
+                              waiting
+                                ? "Loading observations…"
+                                : "No aircraft to display",
+                            )}
                           </h3>
                           <p>
-                            {p.snapshot?.status === "unavailable"
-                              ? "The live provider is unavailable. Choose demo explicitly to explore offline."
-                              : "Try a different search or widen your filters."}
+                            {tx(
+                              p.snapshot?.status === "unavailable"
+                                ? "The live provider is unavailable. Choose demo explicitly to explore offline."
+                                : "Try a different search or widen your filters.",
+                            )}
                           </p>
                           {activeFilters > 0 && (
                             <button onClick={resetFilters}>
-                              Clear filters
+                              {tx("Clear filters")}
                             </button>
                           )}
                         </div>
@@ -797,9 +858,11 @@ export default function Radar(p: RadarProps) {
                 <div className="traffic-footer">
                   <Eye size={14} />
                   <span>
-                    {p.mode === "live"
-                      ? "Observed in queried coverage"
-                      : "Clearly labelled example positions"}
+                    {tx(
+                      p.mode === "live"
+                        ? "Observed in queried coverage"
+                        : "Clearly labelled example positions",
+                    )}
                   </span>
                 </div>
               </>
@@ -814,7 +877,7 @@ export default function Radar(p: RadarProps) {
             checked={labels}
             onChange={(e) => setLabels(e.target.checked)}
           />
-          Callsigns
+          {tx("Callsigns")}
         </label>
         <label>
           <input
@@ -822,7 +885,7 @@ export default function Radar(p: RadarProps) {
             checked={coverage}
             onChange={(e) => setCoverage(e.target.checked)}
           />
-          Coverage
+          {tx("Coverage")}
         </label>
       </div>
       {(p.radarError || p.snapshot?.error) && (
@@ -830,11 +893,13 @@ export default function Radar(p: RadarProps) {
           <Info size={19} />
           <div>
             <strong>
-              {p.mode === "recorded"
-                ? "Recorded frame unavailable"
-                : "Live data is unavailable"}
+              {tx(
+                p.mode === "recorded"
+                  ? "Recorded frame unavailable"
+                  : "Live data is unavailable",
+              )}
             </strong>
-            <p>{p.radarError || p.snapshot?.error}</p>
+            <p>{tx(p.radarError || p.snapshot?.error)}</p>
           </div>
         </div>
       )}
@@ -845,57 +910,67 @@ export default function Radar(p: RadarProps) {
             checked={animateUpdates}
             onChange={(e) => setAnimateUpdates(e.target.checked)}
           />
-          Animate updates
+          {tx("Animate updates")}
         </label>
         <small>
-          Visual transition only · online, ≤250 aircraft · no extrapolation
+          {tx(
+            "Visual transition only · online, ≤250 aircraft · no extrapolation",
+          )}
         </small>
       </div>
       <div className={`radar-playback ${p.mode === "live" ? "is-live" : ""}`}>
         <button
           className="playback-play"
-          aria-label={
+          aria-label={tx(
             p.mode === "recorded"
               ? p.paused
                 ? "Play recorded session"
                 : "Pause recorded playback"
               : p.paused
                 ? "Resume polling"
-                : "Pause polling"
-          }
-          title={
-            p.paused ? "Resume automatic refresh" : "Pause automatic refresh"
-          }
+                : "Pause polling",
+          )}
+          title={tx(
+            p.paused ? "Resume automatic refresh" : "Pause automatic refresh",
+          )}
           onClick={() => p.setPaused(!p.paused)}
         >
           {p.paused ? <Play size={19} /> : <Pause size={19} />}
         </button>
         <div className="playback-time">
           <span>
-            {p.mode === "live"
-              ? "OBSERVATION TIME"
-              : p.mode === "recorded"
-                ? "RECORDED / NOT LIVE"
-                : "SYNTHETIC / FIXED EPOCH"}
+            {tx(
+              p.mode === "live"
+                ? "OBSERVATION TIME"
+                : p.mode === "recorded"
+                  ? "RECORDED / NOT LIVE"
+                  : "SYNTHETIC / FIXED EPOCH",
+            )}
           </span>
           <strong>
-            {p.snapshot?.received_at
-              ? new Date(p.snapshot.received_at).toISOString().slice(11, 19)
-              : "Waiting for data"}
-            <small> UTC</small>
+            {tx(
+              p.snapshot?.received_at
+                ? new Date(p.snapshot.received_at).toISOString().slice(11, 19)
+                : "Waiting for data",
+            )}
+            <small> {tx(" UTC")}</small>
           </strong>
         </div>
         {p.mode !== "live" ? (
           <>
             <label className="playback-timeline">
               <span>
-                Frame {p.mode === "recorded" ? p.frame : p.frame % 20} /{" "}
-                {p.mode === "recorded"
-                  ? (p.recordedSession?.frames ?? 1) - 1
-                  : 19}
+                {tx("Frame ")}
+                {tx(p.mode === "recorded" ? p.frame : p.frame % 20)} {tx(" /")}
+                {tx(" ")}
+                {tx(
+                  p.mode === "recorded"
+                    ? (p.recordedSession?.frames ?? 1) - 1
+                    : 19,
+                )}
               </span>
               <input
-                aria-label="Replay frame"
+                aria-label={tx("Replay frame")}
                 type="range"
                 min="0"
                 max={
@@ -909,8 +984,8 @@ export default function Radar(p: RadarProps) {
             </label>
             <button
               className="next-frame"
-              aria-label="Next frame"
-              title="Next observation"
+              aria-label={tx("Next frame")}
+              title={tx("Next observation")}
               onClick={() =>
                 p.setFrame(
                   p.mode === "recorded"
@@ -929,58 +1004,67 @@ export default function Radar(p: RadarProps) {
           <div className="playback-live">
             <span className="signal-dot" />
             <span>
-              {p.age == null
-                ? "No current snapshot"
-                : p.age > 60
-                  ? `Stale · ${Math.floor(p.age)}s since receipt`
-                  : `Received ${Math.floor(p.age)}s ago`}
+              {tx(
+                p.age == null
+                  ? "No current snapshot"
+                  : p.age > 60
+                    ? `Stale · ${Math.floor(p.age)}s since receipt`
+                    : `Received ${Math.floor(p.age)}s ago`,
+              )}
             </span>
           </div>
         )}
         {p.mode === "recorded" && (
           <label className="refresh-cadence">
             <select
-              aria-label="Recorded playback speed"
+              aria-label={tx("Recorded playback speed")}
               value={p.replayMs}
               onChange={(e) => p.setReplayMs(+e.target.value)}
             >
-              <option value={2000}>0.5 frames/s</option>
-              <option value={1000}>1 frame/s</option>
-              <option value={500}>2 frames/s</option>
+              <option value={2000}>{tx("0.5 frames/s")}</option>
+              <option value={1000}>{tx("1 frame/s")}</option>
+              <option value={500}>{tx("2 frames/s")}</option>
             </select>
           </label>
         )}
         <label className="refresh-cadence" hidden={p.mode === "recorded"}>
           <select
-            aria-label="Refresh interval"
+            aria-label={tx("Refresh interval")}
             value={p.refresh}
             onChange={(e) => p.setRefresh(+e.target.value)}
           >
             {[30, 60, 120].map((n) => (
               <option key={n} value={n}>
-                {n}s refresh
+                {tx(n)}
+                {tx("s refresh")}
               </option>
             ))}
           </select>
         </label>
         <button
-          aria-label="Refresh now"
-          title="Refresh now · provider cooldowns still apply"
+          aria-label={tx("Refresh now")}
+          title={tx("Refresh now · provider cooldowns still apply")}
           onClick={p.refreshNow}
         >
           <RefreshCw size={17} />
         </button>
       </div>
       <div className="radar-status">
-        <span>{p.snapshot?.attribution ?? "Loading local workspace"}</span>
+        <span>{tx(p.snapshot?.attribution ?? "Loading local workspace")}</span>
         <span>
-          {p.snapshot?.received_at
-            ? new Date(p.snapshot.received_at).toISOString().slice(0, 10)
-            : "—"}{" "}
-          ·{" "}
-          {p.mode === "live"
-            ? "Community observations"
-            : "Synthetic example epoch"}
+          {tx(
+            p.snapshot?.received_at
+              ? new Date(p.snapshot.received_at).toISOString().slice(0, 10)
+              : "—",
+          )}
+          {tx(" ")}
+          {tx("·")}
+          {tx(" ")}
+          {tx(
+            p.mode === "live"
+              ? "Community observations"
+              : "Synthetic example epoch",
+          )}
         </span>
       </div>
     </section>

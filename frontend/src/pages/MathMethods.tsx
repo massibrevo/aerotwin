@@ -1,6 +1,8 @@
+import { tx, useLocale } from "../i18n";
 import { Link } from "react-router-dom";
 import { Panel } from "../components/UI";
 export default function MathMethods() {
+  useLocale();
   const sections = [
     [
       "Samples and denominators",
@@ -50,30 +52,36 @@ export default function MathMethods() {
   ];
   return (
     <div className="methodology">
-      <Panel title="Mathematical methods">
+      <Panel title={tx("Mathematical methods")}>
         <p>
-          The formulas below describe the implemented calculations, with units
-          and assumptions. They are not an operational aviation model.{" "}
+          {tx(
+            "The formulas below describe the implemented calculations, with units and assumptions. They are not an operational aviation model.",
+          )}
+          {tx(" ")}
           <a
             href="https://github.com/massibrevo/aerotwin/blob/main/docs/mathematical-methods.md"
             target="_blank"
             rel="noreferrer"
           >
-            Read the complete mathematical appendix ↗
-          </a>{" "}
-          for quantiles, network equations, simulation distributions, geometry,
-          units and code references.
+            {tx("Read the complete mathematical appendix ↗")}
+          </a>
+          {tx(" ")}
+          {tx(
+            "for quantiles, network equations, simulation distributions, geometry, units and code references.",
+          )}
         </p>
         <p>
-          <Link to="/analytics">Analytics studio</Link> ·{" "}
-          <Link to="/forecast">Forecast lab</Link> ·{" "}
-          <Link to="/about">Methodology and sources</Link>
+          <Link to="/analytics">{tx("Analytics studio")}</Link> {tx(" ·")}
+          {tx(" ")}
+          <Link to="/forecast">{tx("Forecast lab")}</Link> {tx(" ·")}
+          {tx(" ")}
+          <Link to="/about">{tx("Methodology and sources")}</Link>
         </p>
       </Panel>
       {sections.map(([title, equation, caveat]) => (
-        <Panel title={title} key={title}>
-          <pre className="math-equation">{equation}</pre>
-          <p>{caveat}</p>
+        <Panel title={tx(title)} key={title}>
+          <pre className="math-equation">{tx(equation)}</pre>
+          <p>{tx(caveat)}</p>
         </Panel>
       ))}
     </div>

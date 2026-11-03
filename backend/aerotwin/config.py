@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 STATE_ROOT = Path(os.environ.get("AEROTWIN_HOME", ROOT)).expanduser().resolve()
 DATA = STATE_ROOT / "data"
 MODELS = STATE_ROOT / "models"

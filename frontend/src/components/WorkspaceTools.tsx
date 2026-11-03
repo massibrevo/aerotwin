@@ -1,3 +1,4 @@
+import { tx, useLocale, LanguageControl } from "../i18n";
 import { UnitsControl } from "../units";
 import { useEffect, useState, type ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,12 +27,13 @@ export function Tip({
   label: string;
   children: ReactElement;
 }) {
+  useLocale();
   return (
     <Tooltip.Root>
-      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Tooltip.Trigger asChild>{tx(children)}</Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Content className="app-tooltip" side="right" sideOffset={10}>
-          {label}
+          {tx(label)}
           <Tooltip.Arrow />
         </Tooltip.Content>
       </Tooltip.Portal>
@@ -131,6 +133,7 @@ export function WorkspaceTools({
   theme: string;
   onTheme: () => void;
 }) {
+  useLocale();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
@@ -152,55 +155,56 @@ export function WorkspaceTools({
       <button
         className="workspace-search"
         onClick={() => setOpen(true)}
-        aria-label="Search workspace"
+        aria-label={tx("Search workspace")}
       >
         <Search size={17} />
-        <span>Search workspace…</span>
-        <kbd>⌘ K</kbd>
+        <span>{tx("Search workspace…")}</span>
+        <kbd>{tx("⌘ K")}</kbd>
       </button>
+      <LanguageControl />
       <UnitsControl />
       <button
         className="theme-toggle"
         onClick={onTheme}
-        aria-label={
-          theme === "light" ? "Switch to dark theme" : "Switch to light theme"
-        }
-        title="Change workspace theme"
+        aria-label={tx(
+          theme === "light" ? "Switch to dark theme" : "Switch to light theme",
+        )}
+        title={tx("Change workspace theme")}
       >
         {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
       </button>
       <Command.Dialog
         open={open}
         onOpenChange={setOpen}
-        label="Navigate AeroTwin"
+        label={tx("Navigate AeroTwin")}
         className="command-dialog"
       >
         <div className="command-search">
           <Search size={20} />
-          <Command.Input placeholder="Find a page or action…" />
-          <kbd>ESC</kbd>
+          <Command.Input placeholder={tx("Find a page or action…")} />
+          <kbd>{tx("ESC")}</kbd>
         </div>
         <Command.List>
-          <Command.Empty>No matching pages or actions.</Command.Empty>
-          <Command.Group heading="Workspace">
+          <Command.Empty>{tx("No matching pages or actions.")}</Command.Empty>
+          <Command.Group heading={tx("Workspace")}>
             {sections.map((s) => (
               <Command.Item
                 key={s.path}
-                value={`${s.label} ${s.description}`}
+                value={`${tx(s.label)} ${tx(s.description)} ${s.label} ${s.description}`}
                 onSelect={() => go(s.path)}
               >
                 <span className={`command-icon accent-${s.color}`}>
                   <s.icon size={18} />
                 </span>
                 <span>
-                  <strong>{s.label}</strong>
-                  <small>{s.description}</small>
+                  <strong>{tx(s.label)}</strong>
+                  <small>{tx(s.description)}</small>
                 </span>
                 <ArrowUpRight size={15} />
               </Command.Item>
             ))}
           </Command.Group>
-          <Command.Group heading="Appearance">
+          <Command.Group heading={tx("Appearance")}>
             <Command.Item
               onSelect={() => {
                 onTheme();
@@ -209,15 +213,19 @@ export function WorkspaceTools({
             >
               <CommandIcon size={18} />
               <span>
-                Switch to {theme === "light" ? "dark" : "light"} theme
+                {tx(
+                  theme === "light"
+                    ? "Switch to dark theme"
+                    : "Switch to light theme",
+                )}
               </span>
             </Command.Item>
           </Command.Group>
         </Command.List>
         <div className="command-footer">
-          <span>↑ ↓ to navigate</span>
-          <span>↵ to open</span>
-          <span>Local workspace</span>
+          <span>{tx("↑ ↓ to navigate")}</span>
+          <span>{tx("↵ to open")}</span>
+          <span>{tx("Local workspace")}</span>
         </div>
       </Command.Dialog>
     </>

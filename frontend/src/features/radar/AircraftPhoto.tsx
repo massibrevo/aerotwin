@@ -1,3 +1,4 @@
+import { tx, useLocale } from "../../i18n";
 import { useEffect, useState } from "react";
 import { Camera } from "lucide-react";
 import { request } from "../../api";
@@ -16,6 +17,7 @@ export default function AircraftPhoto({
   aircraft: Aircraft;
   live: boolean;
 }) {
+  useLocale();
   const eligible =
     live &&
     aircraft.provider === "ADSB.lol" &&
@@ -50,11 +52,13 @@ export default function AircraftPhoto({
             href={photo.link}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="View aircraft photo on Planespotters.net"
+            aria-label={tx("View aircraft photo on Planespotters.net")}
           >
             <img
               src={photo.src}
-              alt={`Aircraft ${aircraft.registration ?? aircraft.icao24.toUpperCase()}`}
+              alt={tx(
+                `Aircraft ${aircraft.registration ?? aircraft.icao24.toUpperCase()}`,
+              )}
               onError={() => setFailed(true)}
               referrerPolicy="no-referrer"
             />
@@ -65,29 +69,34 @@ export default function AircraftPhoto({
             target="_blank"
             rel="noopener noreferrer"
           >
-            © {photo.photographer} · Planespotters.net ↗
+            {tx("© ")}
+            {tx(photo.photographer)} {tx(" · Planespotters.net ↗")}
           </a>
           <span className="photo-context">
-            Reference photo · matched by ICAO hex
+            {tx("Reference photo · matched by ICAO hex")}
           </span>
         </>
       ) : (
         <div className="photo-placeholder" role="status">
           <Camera size={24} />
           <span>
-            {loading
-              ? "Finding aircraft photo…"
-              : eligible
-                ? "Aircraft photo unavailable"
-                : aircraft.provider === "ADSB.lol"
-                  ? "Photo lookup disabled during recorded playback"
-                  : "No real photo for synthetic / replay aircraft"}
+            {tx(
+              loading
+                ? "Finding aircraft photo…"
+                : eligible
+                  ? "Aircraft photo unavailable"
+                  : aircraft.provider === "ADSB.lol"
+                    ? "Photo lookup disabled during recorded playback"
+                    : "No real photo for synthetic / replay aircraft",
+            )}
           </span>
         </div>
       )}
       <div className="photo-identity">
-        <strong>{aircraft.aircraft_type ?? "Type not provided"}</strong>
-        <span>{aircraft.registration ?? aircraft.icao24.toUpperCase()}</span>
+        <strong>{tx(aircraft.aircraft_type ?? "Type not provided")}</strong>
+        <span>
+          {tx(aircraft.registration ?? aircraft.icao24.toUpperCase())}
+        </span>
       </div>
     </div>
   );

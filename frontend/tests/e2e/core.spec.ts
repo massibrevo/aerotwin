@@ -161,6 +161,9 @@ test("unavailable online tiles automatically return to offline geometry", async 
 
 test("Italian guide explains interpretation and limits", async ({ page }) => {
   await page.goto("/guide");
+  await page
+    .getByRole("combobox", { name: "Interface language" })
+    .selectOption("it");
   await expect(
     page.getByRole("heading", { name: "Guida rapida · italiano" }),
   ).toBeVisible();

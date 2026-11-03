@@ -1,3 +1,4 @@
+import { tx, useLocale } from "../i18n";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, ArrowDownToLine } from "lucide-react";
@@ -11,6 +12,7 @@ export default function Historical({
   dataset: string;
   setMode: (m: Mode) => void;
 }) {
+  useLocale();
   const info = useApi<DatasetInfo>("/data/datasets/" + dataset);
   const [search, setSearch] = useState("");
   const [origin, setOrigin] = useState("");
@@ -35,38 +37,38 @@ export default function Historical({
         <div className="search">
           <Search size={15} />
           <input
-            aria-label="Search historical flights"
-            placeholder="Flight ID, airline or destination"
+            aria-label={tx("Search historical flights")}
+            placeholder={tx("Flight ID, airline or destination")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <label>
-          Origin
+          {tx("Origin")}
           <select
-            aria-label="Historical origin"
+            aria-label={tx("Historical origin")}
             value={origin}
             onChange={(e) => setOrigin(e.target.value)}
           >
-            <option value="">All airports</option>
+            <option value="">{tx("All airports")}</option>
             {(info.data?.origins ?? []).map((a) => (
-              <option key={a}>{a}</option>
+              <option key={a}>{tx(a)}</option>
             ))}
           </select>
         </label>
         <label>
-          From
+          {tx("From")}
           <input
-            aria-label="From date"
+            aria-label={tx("From date")}
             type="date"
             value={start}
             onChange={(e) => setStart(e.target.value)}
           />
         </label>
         <label>
-          To
+          {tx("To")}
           <input
-            aria-label="To date"
+            aria-label={tx("To date")}
             type="date"
             value={end}
             onChange={(e) => setEnd(e.target.value)}
@@ -74,18 +76,18 @@ export default function Historical({
         </label>
         <a className="button" href={"/api/v1/historical/export?" + q}>
           <ArrowDownToLine size={14} />
-          Export CSV (max 500)
+          {tx("Export CSV (max 500)")}
         </a>
         <Link className="button" to="/radar" onClick={() => setMode("replay")}>
-          Replay snapshots
+          {tx("Replay snapshots")}
         </Link>
       </div>
       <State error={r.error || s.error} loading={!r.data && !r.error} />
       <div className="two-col">
-        <Panel title="Daily departure delay / minutes">
+        <Panel title={tx("Daily departure delay / minutes")}>
           <Chart data={s.data?.daily ?? []} />
         </Panel>
-        <Panel title="Airline aggregates · full dataset">
+        <Panel title={tx("Airline aggregates · full dataset")}>
           <Chart
             data={s.data?.airlines ?? []}
             type="bar"
@@ -95,10 +97,10 @@ export default function Historical({
         </Panel>
       </div>
       <Panel
-        title="Flight records"
+        title={tx("Flight records")}
         aside={
           <Badge tone="amber">
-            {dataset === "synthetic" ? "SYNTHETIC DEMO" : "BTS IMPORT"}
+            {tx(dataset === "synthetic" ? "SYNTHETIC DEMO" : "BTS IMPORT")}
           </Badge>
         }
       >
@@ -115,63 +117,72 @@ export default function Historical({
                   "Delay / min",
                   "Status",
                 ].map((h) => (
-                  <th key={h}>{h}</th>
+                  <th key={h}>{tx(h)}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {r.data?.rows.map((f) => (
                 <tr key={f.flight_id}>
-                  <td className="mono">{f.flight_id}</td>
-                  <td>{f.date}</td>
-                  <td>{f.carrier}</td>
+                  <td className="mono">{tx(f.flight_id)}</td>
+                  <td>{tx(f.date)}</td>
+                  <td>{tx(f.carrier)}</td>
                   <td>
-                    {f.origin} → {f.dest}
+                    {tx(f.origin)} {tx(" → ")}
+                    {tx(f.dest)}
                   </td>
                   <td>
-                    {new Date(f.scheduled_utc).toISOString().slice(11, 16)}
+                    {tx(new Date(f.scheduled_utc).toISOString().slice(11, 16))}
                   </td>
                   <td className={(f.dep_delay ?? 0) >= 15 ? "amber-text" : ""}>
-                    {num(f.dep_delay, 1)}
+                    {tx(num(f.dep_delay, 1))}
                   </td>
                   <td>
-                    {f.cancelled
-                      ? "Cancelled"
-                      : f.diverted
-                        ? "Diverted"
-                        : "Scheduled example / observed record"}
+                    {tx(
+                      f.cancelled
+                        ? "Cancelled"
+                        : f.diverted
+                          ? "Diverted"
+                          : "Scheduled example / observed record",
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {r.data?.total === 0 && (
-            <div className="notice">No flights match the selected filters.</div>
+            <div className="notice">
+              {tx("No flights match the selected filters.")}
+            </div>
           )}
         </div>
         <div className="pagination">
           <span>
-            {num(r.data?.total)} matching rows · Coverage{" "}
-            {r.data?.coverage.join(" → ")}
+            {tx(num(r.data?.total))} {tx(" matching rows · Coverage")}
+            {tx(" ")}
+            {tx(r.data?.coverage.join(" → "))}
           </span>
           <div>
             <button disabled={page === 1} onClick={() => setPage(page - 1)}>
-              Previous
+              {tx("Previous")}
             </button>
-            <span>Page {page}</span>
+            <span>
+              {tx("Page ")}
+              {tx(page)}
+            </span>
             <button
               disabled={!r.data || page * 25 >= r.data.total}
               onClick={() => setPage(page + 1)}
             >
-              Next
+              {tx("Next")}
             </button>
           </div>
         </div>
       </Panel>
       <p className="small muted">
-        Charts summarize the full loaded dataset; date/search/origin filters
-        apply to the flight table and CSV. Import real data with the documented
-        CLI; synthetic records are never presented as BTS observations.
+        {tx(
+          "Charts summarize the full loaded dataset; date/search/origin filters apply to the flight table and CSV. Import real data with the documented CLI; synthetic records are never presented as BTS observations.",
+        )}
       </p>
     </>
   );

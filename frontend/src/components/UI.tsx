@@ -1,3 +1,4 @@
+import { tx, useLocale, numberLocale } from "../i18n";
 import { useId, type ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -15,7 +16,9 @@ import {
   YAxis,
 } from "recharts";
 export const num = (v: number | null | undefined, d = 0) =>
-  v == null ? "—" : v.toLocaleString("en-US", { maximumFractionDigits: d });
+  v == null
+    ? "—"
+    : v.toLocaleString(numberLocale(), { maximumFractionDigits: d });
 export function Badge({
   children,
   tone = "cyan",
@@ -23,10 +26,11 @@ export function Badge({
   children: ReactNode;
   tone?: string;
 }) {
+  useLocale();
   return (
     <span className={`badge ${tone}`}>
       <i />
-      {children}
+      {tx(children)}
     </span>
   );
 }
@@ -37,13 +41,14 @@ export function State({
   error?: string;
   loading?: boolean;
 }) {
+  useLocale();
   return error ? (
     <div role="alert" className="notice error">
-      {error}
+      {tx(error)}
     </div>
   ) : loading ? (
     <div className="loading" role="status">
-      <span /> Loading local data…
+      <span /> {tx(" Loading local data…")}
     </div>
   ) : null;
 }
@@ -58,6 +63,7 @@ export function Stat({
   unit?: string;
   note?: string;
 }) {
+  useLocale();
   return (
     <motion.div
       className="stat"
@@ -65,12 +71,12 @@ export function Stat({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <span>{label}</span>
+      <span>{tx(label)}</span>
       <strong>
-        {value}
-        <small>{unit}</small>
+        {tx(value)}
+        <small>{tx(unit)}</small>
       </strong>
-      <p>{note}</p>
+      <p>{tx(note)}</p>
       <span className="stat-decoration" aria-hidden="true" />
     </motion.div>
   );
@@ -86,13 +92,14 @@ export function Panel({
   aside?: ReactNode;
   className?: string;
 }) {
+  useLocale();
   return (
     <section className={`panel ${className}`}>
       <div className="panel-heading">
-        <h2>{title}</h2>
-        {aside}
+        <h2>{tx(title)}</h2>
+        {tx(aside)}
       </div>
-      {children}
+      {tx(children)}
     </section>
   );
 }
@@ -107,6 +114,7 @@ export function Chart({
   type?: string;
   x?: string;
 }) {
+  useLocale();
   const reduced = useReducedMotion();
   const gradient = useId().replaceAll(":", "");
   const colors = ["#4788f4", "#f0a052", "#9a78f0"];
@@ -118,17 +126,24 @@ export function Chart({
             <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
             <XAxis
               dataKey={x}
+              tickFormatter={(value) =>
+                typeof value === "number" ? num(value) : tx(String(value))
+              }
               tick={{ fill: "var(--text-muted)", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
+              tickFormatter={(value) => num(value)}
               tick={{ fill: "var(--text-muted)", fontSize: 12 }}
               width={42}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip
+              formatter={(value) =>
+                typeof value === "number" ? num(value, 2) : value
+              }
               contentStyle={{
                 background: "var(--surface)",
                 border: "1px solid var(--border)",
@@ -140,6 +155,7 @@ export function Chart({
               <Bar
                 key={k}
                 dataKey={k}
+                name={tx(k)}
                 fill={colors[i]}
                 isAnimationActive={!reduced}
                 animationDuration={500}
@@ -158,18 +174,25 @@ export function Chart({
             <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
             <XAxis
               dataKey={x}
+              tickFormatter={(value) =>
+                typeof value === "number" ? num(value) : tx(String(value))
+              }
               minTickGap={50}
               tick={{ fill: "var(--text-muted)", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
+              tickFormatter={(value) => num(value)}
               tick={{ fill: "var(--text-muted)", fontSize: 12 }}
               width={42}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip
+              formatter={(value) =>
+                typeof value === "number" ? num(value, 2) : value
+              }
               contentStyle={{
                 background: "var(--surface)",
                 border: "1px solid var(--border)",
@@ -182,6 +205,7 @@ export function Chart({
                 key={k}
                 type="monotone"
                 dataKey={k}
+                name={tx(k)}
                 isAnimationActive={!reduced}
                 animationDuration={500}
                 stroke={colors[i]}

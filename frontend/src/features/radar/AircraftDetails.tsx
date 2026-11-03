@@ -1,3 +1,4 @@
+import { tx, useLocale, numberLocale } from "../../i18n";
 import { useEffect, useState } from "react";
 import { request } from "../../api";
 import type { Aircraft } from "../../types";
@@ -24,6 +25,7 @@ export default function AircraftDetails({
   aircraft: Aircraft;
   live: boolean;
 }) {
+  useLocale();
   const [data, setData] = useState<Details>();
   const [loading, setLoading] = useState(false);
   const eligible =
@@ -54,9 +56,11 @@ export default function AircraftDetails({
   if (!eligible)
     return (
       <p className="reference-note">
-        {aircraft.provider === "ADSB.lol"
-          ? "Recorded observation · no live metadata request."
-          : "Synthetic aircraft · no real identity or route lookup."}
+        {tx(
+          aircraft.provider === "ADSB.lol"
+            ? "Recorded observation · no live metadata request."
+            : "Synthetic aircraft · no real identity or route lookup.",
+        )}
       </p>
     );
   const conflict =
@@ -66,16 +70,17 @@ export default function AircraftDetails({
   return (
     <section
       className="aircraft-reference"
-      aria-label="Aircraft database details"
+      aria-label={tx("Aircraft database details")}
     >
       <h3>
-        Aircraft details{" "}
+        {tx("Aircraft details")}
+        {tx(" ")}
         <a href="https://hexdb.io/" target="_blank" rel="noreferrer">
-          HexDB ↗
+          {tx("HexDB ↗")}
         </a>
       </h3>
       {loading ? (
-        <p role="status">Loading database reference…</p>
+        <p role="status">{tx("Loading database reference…")}</p>
       ) : (
         <>
           {data?.aircraft ? (
@@ -88,46 +93,55 @@ export default function AircraftDetails({
                 "Database registration": data.aircraft.registration,
               }).map(([label, value]) => (
                 <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value ?? "Not provided"}</dd>
+                  <dt>{tx(label)}</dt>
+                  <dd>{tx(value ?? "Not provided")}</dd>
                 </div>
               ))}
             </dl>
           ) : (
-            <p>Aircraft database details unavailable.</p>
+            <p>{tx("Aircraft database details unavailable.")}</p>
           )}
           {conflict && (
             <p role="alert">
-              Registration differs from the observation. Treat this database
-              identity as uncertain.
+              {tx(
+                "Registration differs from the observation. Treat this database identity as uncertain.",
+              )}
             </p>
           )}
           {data?.route_reference ? (
             <div className="route-reference">
-              <strong>Unverified route reference</strong>
+              <strong>{tx("Unverified route reference")}</strong>
               <p>
-                {data.route_reference.airports
-                  .map((a) => a.iata ?? a.icao)
-                  .join(" → ")}
+                {tx(
+                  data.route_reference.airports
+                    .map((a) => a.iata ?? a.icao)
+                    .join(" → "),
+                )}
               </p>
               <small>
-                Database update: {data.route_reference.updated_at ?? "Unknown"}.
-                Callsign association; not confirmed for this flight.
+                {tx("Database update: ")}
+                {tx(data.route_reference.updated_at ?? "Unknown")}
+                {tx(". Callsign association; not confirmed for this flight.")}
               </small>
             </div>
           ) : (
             <p className="reference-note">
-              Verified route / schedule: unavailable.
+              {tx("Verified route / schedule: unavailable.")}
             </p>
           )}
           <p className="reference-note">
-            {data?.caveat ??
-              "Optional database unavailable; live observations are unaffected."}
+            {tx(
+              data?.caveat ??
+                "Optional database unavailable; live observations are unaffected.",
+            )}
           </p>
           {data && (
             <small>
-              Retrieved {new Date(data.retrieved_at).toLocaleString()} ·
-              database lookup time, not record freshness
+              {tx("Retrieved ")}
+              {tx(
+                new Date(data.retrieved_at).toLocaleString(numberLocale()),
+              )}{" "}
+              {tx(" · database lookup time, not record freshness")}
             </small>
           )}
         </>

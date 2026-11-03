@@ -1,9 +1,11 @@
+import { tx, useLocale } from "../i18n";
 import { useUnits } from "../units";
 import { useEffect, useState } from "react";
 import { useApi } from "../api";
 import type { RadarProps, DatasetInfo } from "../types";
 import { Badge, State, Stat, Panel, Chart, num } from "../components/UI";
 export default function Pulse(p: RadarProps & { dataset: string }) {
+  useLocale();
   const u = useUnits();
   const info = useApi<DatasetInfo>("/data/datasets/" + p.dataset);
   const [iata, setIata] = useState("ATL");
@@ -30,43 +32,45 @@ export default function Pulse(p: RadarProps & { dataset: string }) {
     <>
       <div className="controls-bar">
         <label>
-          Schedule airport
+          {tx("Schedule airport")}
           <select
-            aria-label="Pulse airport"
+            aria-label={tx("Pulse airport")}
             value={iata}
             onChange={(e) => setIata(e.target.value)}
           >
             {(info.data?.origins ?? []).map((a) => (
-              <option key={a}>{a}</option>
+              <option key={a}>{tx(a)}</option>
             ))}
           </select>
         </label>
-        <Badge tone="amber">{p.dataset.toUpperCase()} SCHEDULES</Badge>
+        <Badge tone="amber">
+          {tx(p.dataset.toUpperCase())} {tx(" SCHEDULES")}
+        </Badge>
       </div>
       <State error={r.error} />
       <div className="stats-row">
         <Stat
-          label="SCHEDULE ROWS / COVERAGE"
+          label={tx("SCHEDULE ROWS / COVERAGE")}
           value={num(r.data?.schedule_departures)}
         />
         <Stat
-          label={`SNAPSHOT / ${p.region.iata}`}
+          label={tx(`SNAPSHOT / ${p.region.iata}`)}
           value={ac.length}
-          note={p.snapshot?.source}
+          note={tx(p.snapshot?.source)}
         />
         <Stat
-          label="CLIMBING POSITIONS"
+          label={tx("CLIMBING POSITIONS")}
           value={ac.filter((a) => (a.vertical_rate_fpm ?? 0) > 300).length}
-          note={`Proxy: vertical rate >${u.format(300, "vertical")}`}
+          note={tx(`Proxy: vertical rate >${u.format(300, "vertical")}`)}
         />
         <Stat
-          label="DESCENDING POSITIONS"
+          label={tx("DESCENDING POSITIONS")}
           value={ac.filter((a) => (a.vertical_rate_fpm ?? 0) < -300).length}
-          note={`Proxy: vertical rate <${u.format(-300, "vertical")}`}
+          note={tx(`Proxy: vertical rate <${u.format(-300, "vertical")}`)}
         />
       </div>
       <div className="two-col">
-        <Panel title="Scheduled departures by local hour">
+        <Panel title={tx("Scheduled departures by local hour")}>
           <Chart
             data={r.data?.hourly ?? []}
             keys={["flights"]}
@@ -74,14 +78,15 @@ export default function Pulse(p: RadarProps & { dataset: string }) {
             x="hour"
           />
         </Panel>
-        <Panel title="Observed altitude distribution">
+        <Panel title={tx("Observed altitude distribution")}>
           <Chart data={bins} keys={["aircraft"]} type="bar" x="band" />
         </Panel>
       </div>
       <div className="notice">
-        {r.data?.caveat}. Climb/descent proxies refer to the selected radar
-        geography, may include overflights, and are not official airport
-        movements.
+        {tx(r.data?.caveat)}
+        {tx(
+          ". Climb/descent proxies refer to the selected radar geography, may include overflights, and are not official airport movements.",
+        )}
       </div>
     </>
   );

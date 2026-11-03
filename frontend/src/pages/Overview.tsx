@@ -1,3 +1,4 @@
+import { tx, useLocale } from "../i18n";
 import { useUnits } from "../units";
 import { Link } from "react-router-dom";
 import { Activity, ArrowRight, ShieldCheck } from "lucide-react";
@@ -7,6 +8,7 @@ import { Badge, State, Stat, Panel, Chart, num } from "../components/UI";
 export default function Overview(
   p: RadarProps & { summary?: Summary; error: string },
 ) {
+  useLocale();
   const u = useUnits();
   const high =
     p.snapshot?.aircraft.filter((a) => (a.altitude_ft ?? 0) > 30000).length ??
@@ -19,47 +21,54 @@ export default function Overview(
       <State error={p.error || p.radarError} />
       <div className="stats-row">
         <Stat
-          label="AIRCRAFT IN COVERAGE"
+          label={tx("AIRCRAFT IN COVERAGE")}
           value={p.snapshot?.aircraft.length ?? "—"}
-          note={p.snapshot?.source ?? "Loading observations"}
+          note={tx(p.snapshot?.source ?? "Loading observations")}
         />
         <Stat
-          label="AIRPORTS IN DATASET"
+          label={tx("AIRPORTS IN DATASET")}
           value={p.summary?.airports ?? "—"}
-          note={
+          note={tx(
             p.summary?.data_class === "synthetic"
               ? "Synthetic US domestic network"
-              : "Imported schedule coverage"
-          }
+              : "Imported schedule coverage",
+          )}
         />
         <Stat
-          label="FLIGHT RECORDS"
+          label={tx("FLIGHT RECORDS")}
           value={num(p.summary?.rows)}
-          note={p.summary?.coverage.join(" → ")}
+          note={tx(p.summary?.coverage.join(" → "))}
         />
         <Stat
-          label="MEAN DEPARTURE DELAY"
+          label={tx("MEAN DEPARTURE DELAY")}
           value={num(p.summary?.mean_delay, 1)}
           unit=" min"
-          note={`${p.summary?.data_class ?? "Synthetic"} schedule data · not ADS-B`}
+          note={tx(
+            `${p.summary?.data_class ?? "Synthetic"} schedule data · not ADS-B`,
+          )}
         />
       </div>
       <div className="overview-grid">
         <Panel
-          title="Airspace monitor"
+          title={tx("Airspace monitor")}
           aside={
             <Link className="text-link" to="/radar">
-              Open radar <ArrowRight size={14} />
+              {tx("Open radar ")}
+              <ArrowRight size={14} />
             </Link>
           }
           className="map-panel"
         >
           <div className="subheading">
             <span>
-              {p.region.name} / {p.region.iata}{" "}
-              <small>{u.format(p.radius, "distance")} RADIUS</small>
+              {tx(p.region.name)} {tx(" / ")}
+              {tx(p.region.iata)}
+              {tx(" ")}
+              <small>
+                {tx(u.format(p.radius, "distance"))} {tx(" RADIUS")}
+              </small>
             </span>
-            <Badge tone="amber">{p.snapshot?.source ?? "LOADING"}</Badge>
+            <Badge tone="amber">{tx(p.snapshot?.source ?? "LOADING")}</Badge>
           </div>
           <RadarMap
             aircraft={p.snapshot?.aircraft ?? []}
@@ -69,28 +78,40 @@ export default function Overview(
             onSelect={p.setSelected}
           />
           {p.snapshot?.error && (
-            <div className="notice error">{p.snapshot.error}</div>
+            <div className="notice error">{tx(p.snapshot.error)}</div>
           )}
           {p.selected && (
             <div className="selection-strip">
-              {p.selected.callsign} ·{" "}
-              {p.selected.ground
-                ? "Ground"
-                : u.format(p.selected.altitude_ft, "altitude")}{" "}
-              · {u.format(p.selected.ground_speed_kt, "speed")}{" "}
-              <Link to="/radar">Inspect aircraft →</Link>
+              {tx(p.selected.callsign)} {tx(" ·")}
+              {tx(" ")}
+              {tx(
+                p.selected.ground
+                  ? "Ground"
+                  : u.format(p.selected.altitude_ft, "altitude"),
+              )}
+              {tx(" ")}
+              {tx("· ")}
+              {tx(u.format(p.selected.ground_speed_kt, "speed"))}
+              {tx(" ")}
+              <Link to="/radar">{tx("Inspect aircraft →")}</Link>
             </div>
           )}
         </Panel>
         <div className="right-stack">
-          <Panel title="Observation profile" aside={<Activity size={16} />}>
+          <Panel
+            title={tx("Observation profile")}
+            aside={<Activity size={16} />}
+          >
             <div className="profile-total">
-              {p.snapshot?.aircraft.length ?? 0}
-              <span>aircraft in selected snapshot</span>
+              {tx(p.snapshot?.aircraft.length ?? 0)}
+              <span>{tx("aircraft in selected snapshot")}</span>
             </div>
             <div className="profile-row">
-              <span>Above {u.format(30000, "altitude")}</span>
-              <strong>{high}</strong>
+              <span>
+                {tx("Above ")}
+                {tx(u.format(30000, "altitude"))}
+              </span>
+              <strong>{tx(high)}</strong>
             </div>
             <div className="meter">
               <i
@@ -100,8 +121,11 @@ export default function Overview(
               />
             </div>
             <div className="profile-row">
-              <span>Below {u.format(10000, "altitude")}</span>
-              <strong>{low}</strong>
+              <span>
+                {tx("Below ")}
+                {tx(u.format(10000, "altitude"))}
+              </span>
+              <strong>{tx(low)}</strong>
             </div>
             <div className="meter amber-meter">
               <i
@@ -111,45 +135,49 @@ export default function Overview(
               />
             </div>
             <p className="muted small">
-              Snapshot counts are coverage observations. They do not identify
-              arrivals or departures.
+              {tx(
+                "Snapshot counts are coverage observations. They do not identify arrivals or departures.",
+              )}
             </p>
           </Panel>
-          <Panel title="Data integrity" aside={<ShieldCheck size={16} />}>
+          <Panel title={tx("Data integrity")} aside={<ShieldCheck size={16} />}>
             <div className="integrity-row">
-              <span>Missing delay labels</span>
-              <strong>{p.summary?.null_delay ?? "—"}</strong>
+              <span>{tx("Missing delay labels")}</span>
+              <strong>{tx(p.summary?.null_delay ?? "—")}</strong>
             </div>
             <div className="integrity-row">
-              <span>Cancelled records</span>
-              <strong>{p.summary?.cancelled ?? "—"}</strong>
+              <span>{tx("Cancelled records")}</span>
+              <strong>{tx(p.summary?.cancelled ?? "—")}</strong>
             </div>
             <div className="integrity-row">
-              <span>Data provenance</span>
-              <Badge tone="amber">{p.summary?.data_class ?? "—"}</Badge>
+              <span>{tx("Data provenance")}</span>
+              <Badge tone="amber">{tx(p.summary?.data_class ?? "—")}</Badge>
             </div>
             <Link to="/data" className="text-link">
-              Inspect source catalog <ArrowRight size={14} />
+              {tx("Inspect source catalog ")}
+              <ArrowRight size={14} />
             </Link>
           </Panel>
         </div>
       </div>
       <div className="two-col">
         <Panel
-          title="Departure delay through time"
+          title={tx("Departure delay through time")}
           aside={
             <span className="tiny">
-              {p.summary?.data_class.toUpperCase()} · DAILY MEAN / MIN
+              {tx(p.summary?.data_class.toUpperCase())}{" "}
+              {tx(" · DAILY MEAN / MIN")}
             </span>
           }
         >
           <Chart data={p.summary?.daily ?? []} />
         </Panel>
         <Panel
-          title="Network route activity"
+          title={tx("Network route activity")}
           aside={
             <Link to="/network" className="text-link">
-              Explore network <ArrowRight size={14} />
+              {tx("Explore network ")}
+              <ArrowRight size={14} />
             </Link>
           }
         >
@@ -161,7 +189,7 @@ export default function Overview(
               .map((r) => (
                 <div key={r.origin + r.dest}>
                   <span className="route-code">
-                    {r.origin} <ArrowRight size={12} /> {r.dest}
+                    {tx(r.origin)} <ArrowRight size={12} /> {tx(r.dest)}
                   </span>
                   <div className="route-bar">
                     <i
@@ -170,13 +198,14 @@ export default function Overview(
                       }}
                     />
                   </div>
-                  <strong>{num(r.flights)}</strong>
+                  <strong>{tx(num(r.flights))}</strong>
                 </div>
               ))}
           </div>
           <p className="small muted">
-            Route frequencies in the loaded flight dataset. Aircraft callsigns
-            do not determine these routes.
+            {tx(
+              "Route frequencies in the loaded flight dataset. Aircraft callsigns do not determine these routes.",
+            )}
           </p>
         </Panel>
       </div>

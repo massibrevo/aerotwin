@@ -1,3 +1,4 @@
+import { tx, useLocale } from "../i18n";
 import { Link } from "react-router-dom";
 import { saveJson } from "../features/analytics/export";
 import { useEffect, useState } from "react";
@@ -45,6 +46,7 @@ type Comparison = {
   caveat: string;
 };
 export default function Analytics({ dataset }: { dataset: string }) {
+  useLocale();
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("carrier");
   const [dates, setDates] = useState({
@@ -83,22 +85,24 @@ export default function Analytics({ dataset }: { dataset: string }) {
   return (
     <>
       <Panel
-        title="Compare schedule periods"
+        title={tx("Compare schedule periods")}
         aside={
           <Badge tone="amber">
-            {dataset === "synthetic"
-              ? "SYNTHETIC EXAMPLES"
-              : "IMPORTED BTS · AUTHENTICITY UNVERIFIED"}
+            {tx(
+              dataset === "synthetic"
+                ? "SYNTHETIC EXAMPLES"
+                : "IMPORTED BTS · AUTHENTICITY UNVERIFIED",
+            )}
           </Badge>
         }
       >
         <p>
-          <Link to="/math">Math formulas and assumptions →</Link>
+          <Link to="/math">{tx("Math formulas and assumptions →")}</Link>
         </p>
         <p className="muted">
-          Compare earlier period A with later period B. Default windows split
-          the dataset's distinct schedule dates in half. These statistics
-          describe schedule records, independently of the live radar.
+          {tx(
+            "Compare earlier period A with later period B. Default windows split the dataset's distinct schedule dates in half. These statistics describe schedule records, independently of the live radar.",
+          )}
         </p>
         <form
           className="comparison-form"
@@ -109,16 +113,16 @@ export default function Analytics({ dataset }: { dataset: string }) {
         >
           {Object.entries(dates).map(([key, value]) => (
             <label key={key}>
-              {
+              {tx(
                 {
                   a_start: "A · start",
                   a_end: "A · end",
                   b_start: "B · start",
                   b_end: "B · end",
-                }[key]
-              }
+                }[key],
+              )}
               <input
-                aria-label={`Comparison ${key}`}
+                aria-label={tx(`Comparison ${key}`)}
                 required
                 type="date"
                 value={value}
@@ -129,20 +133,20 @@ export default function Analytics({ dataset }: { dataset: string }) {
             </label>
           ))}
           <label>
-            Compare by
+            {tx("Compare by")}
             <select
-              aria-label="Comparison grouping"
+              aria-label={tx("Comparison grouping")}
               value={group}
               onChange={(e) => setGroup(e.target.value)}
             >
-              <option value="carrier">Carrier</option>
-              <option value="origin">Origin airport</option>
-              <option value="dest">Destination airport</option>
-              <option value="route">Route</option>
+              <option value="carrier">{tx("Carrier")}</option>
+              <option value="origin">{tx("Origin airport")}</option>
+              <option value="dest">{tx("Destination airport")}</option>
+              <option value="route">{tx("Route")}</option>
             </select>
           </label>
           <button className="primary" disabled={!dates.a_start}>
-            Compare periods
+            {tx("Compare periods")}
           </button>
           <button
             type="button"
@@ -151,46 +155,50 @@ export default function Analytics({ dataset }: { dataset: string }) {
               r.reload();
             }}
           >
-            Reset periods
+            {tx("Reset periods")}
           </button>
         </form>
         <State error={r.error} loading={!data && !r.error} />
       </Panel>
       {data && (
-        <div aria-label="Schedule analytics results">
+        <div aria-label={tx("Schedule analytics results")}>
           <div className="stats-row">
             <Stat
-              label="MEAN DELAY CHANGE · B − A"
+              label={tx("MEAN DELAY CHANGE · B − A")}
               value={num(delta, 2)}
               unit=" min"
-              note="Labelled, noncancelled/nondiverted flights"
+              note={tx("Labelled, noncancelled/nondiverted flights")}
             />
             <Stat
-              label="MIX-STANDARDISED CHANGE"
+              label={tx("MIX-STANDARDISED CHANGE")}
               value={num(data.standardised_delta, 2)}
               unit=" min"
-              note={`${data.standardised_groups} shared groups · ${num(data.standardised_a_label_coverage * 100, 1)}% of A labels covered`}
+              note={tx(
+                `${data.standardised_groups} shared groups · ${num(data.standardised_a_label_coverage * 100, 1)}% of A labels covered`,
+              )}
             />
             <Stat
-              label="ROWS IN COMPARISON"
+              label={tx("ROWS IN COMPARISON")}
               value={num(data.periods.a.rows + data.periods.b.rows)}
-              note="A + B; not a live movement count"
+              note={tx("A + B; not a live movement count")}
             />
             <Stat
-              label="DUPLICATE FLIGHT IDS · DATASET"
+              label={tx("DUPLICATE FLIGHT IDS · DATASET")}
               value={num(data.quality.duplicate_flight_ids)}
-              note={`${num(data.quality.missing_delay_labels)} missing delay labels across ${num(data.quality.rows)} records`}
+              note={tx(
+                `${num(data.quality.missing_delay_labels)} missing delay labels across ${num(data.quality.rows)} records`,
+              )}
             />
           </div>
           <Panel
-            title="Period scorecard"
+            title={tx("Period scorecard")}
             aside={
               <button
                 onClick={() =>
                   saveJson(data, `aerotwin-${dataset}-comparison.json`)
                 }
               >
-                Export analysis JSON
+                {tx("Export analysis JSON")}
               </button>
             }
           >
@@ -198,13 +206,13 @@ export default function Analytics({ dataset }: { dataset: string }) {
               <table className="comparison-scorecard">
                 <thead>
                   <tr>
-                    <th>Period</th>
-                    <th>Rows / labels</th>
-                    <th>Mean / median delay</th>
-                    <th>P90 delay</th>
-                    <th>≥15 min / labelled</th>
-                    <th>Cancelled / all rows</th>
-                    <th>Missing eligible labels</th>
+                    <th>{tx("Period")}</th>
+                    <th>{tx("Rows / labels")}</th>
+                    <th>{tx("Mean / median delay")}</th>
+                    <th>{tx("P90 delay")}</th>
+                    <th>{tx("≥15 min / labelled")}</th>
+                    <th>{tx("Cancelled / all rows")}</th>
+                    <th>{tx("Missing eligible labels")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -213,35 +221,48 @@ export default function Analytics({ dataset }: { dataset: string }) {
                     return (
                       <tr key={key}>
                         <td>
-                          <strong>{key.toUpperCase()}</strong>
+                          <strong>{tx(key.toUpperCase())}</strong>
                           <small>
-                            {p.start} → {p.end}
+                            {tx(p.start)} {tx(" → ")}
+                            {tx(p.end)}
                           </small>
                         </td>
                         <td>
-                          {num(p.rows)} / {num(p.labelled)}
+                          {tx(num(p.rows))} {tx(" / ")}
+                          {tx(num(p.labelled))}
                         </td>
                         <td>
-                          {num(p.mean_delay, 2)} / {num(p.median_delay, 2)} min
+                          {tx(num(p.mean_delay, 2))} {tx(" / ")}
+                          {tx(num(p.median_delay, 2))} {tx(" min")}
                         </td>
-                        <td>{num(p.p90_delay, 2)} min</td>
                         <td>
-                          {num(
-                            p.delayed_15_rate == null
-                              ? null
-                              : p.delayed_15_rate * 100,
-                            1,
+                          {tx(num(p.p90_delay, 2))} {tx(" min")}
+                        </td>
+                        <td>
+                          {tx(
+                            num(
+                              p.delayed_15_rate == null
+                                ? null
+                                : p.delayed_15_rate * 100,
+                              1,
+                            ),
                           )}
-                          %
+                          {tx("%")}
                         </td>
                         <td>
-                          {num(
-                            p.cancel_rate == null ? null : p.cancel_rate * 100,
-                            1,
+                          {tx(
+                            num(
+                              p.cancel_rate == null
+                                ? null
+                                : p.cancel_rate * 100,
+                              1,
+                            ),
                           )}
-                          % ({p.cancelled})
+                          {tx("% (")}
+                          {tx(p.cancelled)}
+                          {tx(")")}
                         </td>
-                        <td>{p.missing_labels}</td>
+                        <td>{tx(p.missing_labels)}</td>
                       </tr>
                     );
                   })}
@@ -249,16 +270,16 @@ export default function Analytics({ dataset }: { dataset: string }) {
               </table>
             </div>
             <p className="small muted">
-              Negative delay means an early departure. P90 is a distribution
-              percentile, not a confidence interval. Rates use the denominators
-              shown; cancelled/diverted rows are excluded from delay statistics.
+              {tx(
+                "Negative delay means an early departure. P90 is a distribution percentile, not a confidence interval. Rates use the denominators shown; cancelled/diverted rows are excluded from delay statistics.",
+              )}
             </p>
           </Panel>
           <div className="two-col">
-            <Panel title="Daily mean departure delay · minutes">
+            <Panel title={tx("Daily mean departure delay · minutes")}>
               <Chart data={data.daily} keys={["mean_delay"]} />
             </Panel>
-            <Panel title="Departure delay distribution · flight counts">
+            <Panel title={tx("Departure delay distribution · flight counts")}>
               <Chart
                 data={data.distribution}
                 keys={["a", "b"]}
@@ -266,13 +287,14 @@ export default function Analytics({ dataset }: { dataset: string }) {
                 x="band"
               />
               <p className="small muted">
-                A = earlier period · B = later period. Counts reflect different
-                period sizes; the scorecard compares rates.
+                {tx(
+                  "A = earlier period · B = later period. Counts reflect different period sizes; the scorecard compares rates.",
+                )}
               </p>
             </Panel>
           </div>
           <Panel
-            title={`Group comparison · ${data.group_by}`}
+            title={tx(`Group comparison · ${data.group_by}`)}
             aside={
               <label className="inline-check">
                 <input
@@ -280,42 +302,47 @@ export default function Analytics({ dataset }: { dataset: string }) {
                   checked={showSmall}
                   onChange={(e) => setShowSmall(e.target.checked)}
                 />
-                Include small samples
+                {tx("Include small samples")}
               </label>
             }
           >
             <p className="small muted">
-              Groups need ≥30 valid labels in both periods by default. Lower
-              samples are flagged. Sorted by combined volume; showing up to 100
-              of {data.total_groups} groups. Standardisation uses all qualifying
-              groups, weighted by A's label counts.
+              {tx(
+                "Groups need ≥30 valid labels in both periods by default. Lower samples are flagged. Sorted by combined volume; showing up to 100 of ",
+              )}
+              {tx(data.total_groups)}{" "}
+              {tx(
+                " groups. Standardisation uses all qualifying groups, weighted by A's label counts.",
+              )}
             </p>
             <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Group</th>
-                    <th>A labels</th>
-                    <th>B labels</th>
-                    <th>A mean / min</th>
-                    <th>B mean / min</th>
-                    <th>Change B − A / min</th>
-                    <th>Sample</th>
+                    <th>{tx("Group")}</th>
+                    <th>{tx("A labels")}</th>
+                    <th>{tx("B labels")}</th>
+                    <th>{tx("A mean / min")}</th>
+                    <th>{tx("B mean / min")}</th>
+                    <th>{tx("Change B − A / min")}</th>
+                    <th>{tx("Sample")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((g) => (
                     <tr key={g.group}>
-                      <td>{g.group}</td>
-                      <td>{g.a.labelled}</td>
-                      <td>{g.b.labelled}</td>
-                      <td>{num(g.a.mean_delay, 2)}</td>
-                      <td>{num(g.b.mean_delay, 2)}</td>
-                      <td>{num(g.delta_mean, 2)}</td>
+                      <td>{tx(g.group)}</td>
+                      <td>{tx(g.a.labelled)}</td>
+                      <td>{tx(g.b.labelled)}</td>
+                      <td>{tx(num(g.a.mean_delay, 2))}</td>
+                      <td>{tx(num(g.b.mean_delay, 2))}</td>
+                      <td>{tx(num(g.delta_mean, 2))}</td>
                       <td>
-                        {g.small_sample
-                          ? "Small / missing group"
-                          : "≥30 per period"}
+                        {tx(
+                          g.small_sample
+                            ? "Small / missing group"
+                            : "≥30 per period",
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -323,15 +350,17 @@ export default function Analytics({ dataset }: { dataset: string }) {
               </table>
               {!rows.length && (
                 <p>
-                  No groups meet the sample threshold. Enable small samples to
-                  inspect available groups.
+                  {tx(
+                    "No groups meet the sample threshold. Enable small samples to inspect available groups.",
+                  )}
                 </p>
               )}
             </div>
           </Panel>
-          <div className="notice">{data.caveat}</div>
+          <div className="notice">{tx(data.caveat)}</div>
           <p className="small muted dataset-revision">
-            Dataset revision: {data.dataset_revision}
+            {tx("Dataset revision: ")}
+            {tx(data.dataset_revision)}
           </p>
         </div>
       )}

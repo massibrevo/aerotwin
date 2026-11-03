@@ -1,3 +1,4 @@
+import { tx, useLocale, numberLocale } from "./i18n";
 import { SlidersHorizontal } from "lucide-react";
 import {
   createContext,
@@ -77,7 +78,7 @@ export function unitTools(units: Units) {
   ) =>
     value == null || !Number.isFinite(value)
       ? "—"
-      : convert(value, kind).toLocaleString("en-US", {
+      : convert(value, kind).toLocaleString(numberLocale(), {
           maximumFractionDigits: digits,
         });
   const format = (
@@ -92,6 +93,7 @@ const UnitContext = createContext({
   setUnits: (_: Units) => {},
 });
 export function UnitsProvider({ children }: { children: ReactNode }) {
+  const locale = useLocale();
   const [units, setValue] = useState<Units>(() => {
     try {
       const stored: unknown = JSON.parse(
@@ -114,12 +116,15 @@ export function UnitsProvider({ children }: { children: ReactNode }) {
         }
       },
     }),
-    [units],
+    [units, locale],
   );
-  return <UnitContext.Provider value={value}>{children}</UnitContext.Provider>;
+  return (
+    <UnitContext.Provider value={value}>{tx(children)}</UnitContext.Provider>
+  );
 }
 export const useUnits = () => useContext(UnitContext);
 export function UnitsControl() {
+  useLocale();
   const u = useUnits();
   const [open, setOpen] = useState(false);
   const isMetric = (Object.keys(metric) as (keyof Units)[]).every(
@@ -135,76 +140,82 @@ export function UnitsControl() {
       <button
         className="metric-switch"
         role="switch"
-        aria-label="Metric units"
+        aria-label={tx("Metric units")}
         aria-checked={isMetric}
-        title="Switch live between aviation and metric units"
+        title={tx("Switch live between aviation and metric units")}
         onClick={() => u.setUnits(isMetric ? aviation : metric)}
       >
         <span className="metric-track" aria-hidden="true">
           <i />
         </span>
-        <span>Metric</span>
+        <span>{tx("Metric")}</span>
       </button>
       <button
         className="units-toggle"
-        aria-label="Display units"
+        aria-label={tx("Display units")}
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
         <SlidersHorizontal size={15} aria-hidden="true" />
-        <span>Units</span>
+        <span>{tx("Units")}</span>
       </button>
       {open && (
         <>
           <button
             className="units-backdrop"
-            aria-label="Close units settings"
+            aria-label={tx("Close units settings")}
             onClick={() => setOpen(false)}
           />
           <div
             className="units-panel"
             role="group"
-            aria-label="Display unit settings"
+            aria-label={tx("Display unit settings")}
           >
             <div className="units-heading">
-              <strong>Display units</strong>
+              <strong>{tx("Display units")}</strong>
               <button
                 onClick={() => setOpen(false)}
-                aria-label="Close display units"
+                aria-label={tx("Close display units")}
               >
-                ×
+                {tx("×")}
               </button>
             </div>
             <div className="units-presets">
               <button onClick={() => u.setUnits(aviation)}>
-                Aviation units
+                {tx("Aviation units")}
               </button>
-              <button onClick={() => u.setUnits(metric)}>Metric units</button>
+              <button onClick={() => u.setUnits(metric)}>
+                {tx("Metric units")}
+              </button>
             </div>
             {(Object.keys(choices) as (keyof Units)[]).map((key) => (
               <label key={key}>
-                {
+                {tx(
                   {
                     altitude: "Altitude",
                     speed: "Speed",
                     distance: "Distance",
                     vertical: "Vertical rate",
-                  }[key]
-                }
+                  }[key],
+                )}
                 <select
-                  aria-label={`${key} units`}
+                  aria-label={tx(`${key} units`)}
                   value={u.units[key]}
                   onChange={(e) =>
                     u.setUnits({ ...u.units, [key]: e.target.value })
                   }
                 >
                   {choices[key].map((unit) => (
-                    <option key={unit}>{unit}</option>
+                    <option key={unit}>{tx(unit)}</option>
                   ))}
                 </select>
               </label>
             ))}
-            <p>Updates instantly across the workspace. Saved on this device.</p>
+            <p>
+              {tx(
+                "Updates instantly across the workspace. Saved on this device.",
+              )}
+            </p>
           </div>
         </>
       )}
