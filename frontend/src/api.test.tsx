@@ -45,11 +45,21 @@ describe("API contract", () => {
   });
 });
 
-it('explains a disconnected local server',async()=>{
- vi.stubGlobal('fetch',vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
- await expect(request('/health')).rejects.toThrow('Local server unreachable');
+it("explains a disconnected local server", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockRejectedValue(new TypeError("Failed to fetch")),
+  );
+  await expect(request("/health")).rejects.toThrow("Local server unreachable");
 });
-it('does not try parsing an HTML proxy error as JSON',async()=>{
- vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:false,status:502,headers:new Headers({'Content-Type':'text/html'})}));
- await expect(request('/health')).rejects.toThrow('HTTP 502');
+it("does not try parsing an HTML proxy error as JSON", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      headers: new Headers({ "Content-Type": "text/html" }),
+    }),
+  );
+  await expect(request("/health")).rejects.toThrow("HTTP 502");
 });

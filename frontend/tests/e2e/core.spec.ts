@@ -14,13 +14,17 @@ test("offline end-to-end control tower, radar, history, forecast and simulator",
       fullPage: true,
     });
   await page.getByRole("link", { name: "Live radar", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Use offline map", exact: true })
+    .click();
   await expect(
     page.getByRole("button", { name: "Select SYN101", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Select SYN101", exact: true })
     .click();
-  await expect(page.getByLabel("Aircraft inspector")).toContainText("a00000");
+  await expect(page.getByLabel("Aircraft inspector")).toContainText(/a00000/i);
+  await page.getByRole("button", { name: "All aircraft", exact: true }).click();
   await page.getByLabel("Search aircraft").fill("SYN101");
   await expect(page.locator(".aircraft-row")).toHaveCount(1);
   await page.getByLabel("Search aircraft").fill("");
@@ -75,6 +79,9 @@ test("live outage is explicit and never becomes synthetic LIVE", async ({
     else await route.continue();
   });
   await page.goto("/radar");
+  await page
+    .getByRole("button", { name: "Use offline map", exact: true })
+    .click();
   await page.getByRole("button", { name: "Live ADS-B", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Live provider unavailable",
@@ -107,7 +114,12 @@ test("online map style is requested and offline switch works", async ({
     });
   });
   await page.goto("/radar");
-  await page.getByRole("button", { name: "Enable online map" }).click();
+  if (
+    await page
+      .getByRole("button", { name: "Enable online map", exact: true })
+      .isVisible()
+  )
+    await page.getByRole("button", { name: "Enable online map" }).click();
   await expect(page.locator(".maplibregl-canvas")).toBeVisible();
   await expect.poll(() => requested).toBe(true);
   await page.getByRole("button", { name: "Use offline map" }).click();
@@ -132,7 +144,12 @@ test("unavailable online tiles automatically return to offline geometry", async 
     r.fulfill({ status: 503, body: "Unavailable in test" }),
   );
   await page.goto("/radar");
-  await page.getByRole("button", { name: "Enable online map" }).click();
+  if (
+    await page
+      .getByRole("button", { name: "Enable online map", exact: true })
+      .isVisible()
+  )
+    await page.getByRole("button", { name: "Enable online map" }).click();
   await expect(
     page.getByRole("button", { name: "Enable online map" }),
   ).toBeVisible({ timeout: 20000 });
@@ -228,4 +245,68 @@ test("valid BTS-schema fixture imports, trains and predicts end to end", async (
   await expect(page.getByLabel("Prediction result")).toContainText(
     "BTS IMPORT MODEL",
   );
+});
+
+test("command navigation and theme are functional and persistent", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Search workspace", exact: true })
+    .click();
+  await page.getByPlaceholder("Find a page or action…").fill("Forecast lab");
+  await page.getByRole("option", { name: /Forecast lab/ }).click();
+  await expect(page).toHaveURL(/\/forecast$/);
+  await page
+    .getByRole("button", { name: "Switch to dark theme", exact: true })
+    .click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page
+    .getByRole("button", { name: "Switch to light theme", exact: true })
+    .click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
+test("radar filters, follow, display controls and narrow layout work", async ({
+  page,
+}) => {
+  await page.goto("/radar");
+  await page
+    .getByRole("button", { name: "Use offline map", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Aircraft filters", exact: true })
+    .click();
+  await page.getByLabel("Minimum altitude", { exact: true }).press("End");
+  await expect(page.locator(".aircraft-row")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Clear filters", exact: true })
+    .click();
+  await expect(page.locator(".aircraft-row")).toHaveCount(42);
+  await page
+    .getByRole("button", { name: "Select SYN101", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Follow aircraft", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Following", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Next frame", exact: true }).click();
+  await expect(page.getByLabel("Aircraft inspector")).toContainText("SYN101");
+  await page.getByRole("button", { name: "Expand radar", exact: true }).click();
+  await expect(page.locator(".radar-workspace")).toHaveClass(/radar-expanded/);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".radar-workspace")).not.toHaveClass(
+    /radar-expanded/,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByLabel("Aircraft inspector")).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
 });

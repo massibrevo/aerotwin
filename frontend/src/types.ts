@@ -7,6 +7,8 @@ export interface Airport {
   tz: string;
 }
 export interface Aircraft {
+  registration?: string | null;
+  aircraft_type?: string | null;
   icao24: string;
   callsign: string | null;
   lat: number;

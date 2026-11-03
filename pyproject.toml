@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aerotwin"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local-first aviation data science and assumption-based digital twin"
 requires-python = ">=3.12"
 dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.32,<1", "httpx>=0.28,<1", "pydantic>=2.10,<3", "numpy>=2,<3", "pandas>=2.2,<3", "pyarrow>=18", "duckdb>=1.1,<2", "scikit-learn>=1.6,<2", "networkx>=3.4,<4", "simpy>=4.1,<5", "joblib>=1.4,<2", "tzdata>=2024.2"]

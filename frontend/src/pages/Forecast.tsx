@@ -244,24 +244,30 @@ export default function Forecast() {
           <div className="chart">
             <ResponsiveContainer>
               <ScatterChart>
-                <CartesianGrid stroke="#233240" />
+                <CartesianGrid stroke="var(--chart-grid)" />
                 <XAxis
                   type="number"
                   dataKey="actual"
                   name="Actual / min"
-                  tick={{ fill: "#8195a6", fontSize: 10 }}
+                  tick={{ fill: "var(--text-muted)", fontSize: 12 }}
                 />
                 <YAxis
                   type="number"
                   dataKey="predicted"
                   name="Predicted / min"
-                  tick={{ fill: "#8195a6", fontSize: 10 }}
+                  tick={{ fill: "var(--text-muted)", fontSize: 12 }}
                 />
                 <Tooltip
                   cursor={{ strokeDasharray: "3 3" }}
-                  contentStyle={{ background: "#101c2a" }}
+                  contentStyle={{
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                  }}
                 />
-                <Scatter data={model?.validation_chart ?? []} fill="#48c7dd" />
+                <Scatter
+                  data={model?.validation_chart ?? []}
+                  fill="var(--accent)"
+                />
               </ScatterChart>
             </ResponsiveContainer>
           </div>

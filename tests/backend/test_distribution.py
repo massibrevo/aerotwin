@@ -144,3 +144,12 @@ def test_background_training_has_real_persisted_completion():
 def test_unknown_position_age_is_never_fabricated_as_fresh():
     rows, rejected = parse_response({"ac": [{"hex": "abc123", "lat": 41, "lon": 2}]})
     assert rows == [] and rejected == 1
+
+
+def test_optional_provider_registry_metadata_is_observed_not_inferred():
+    rows, rejected = parse_response(
+        {"ac": [{"hex": "abc123", "lat": 41, "lon": 2, "seen_pos": 1, "r": "EC-TEST", "t": "A320"}]}
+    )
+    assert rejected == 0 and rows[0]["registration"] == "EC-TEST"
+    assert rows[0]["aircraft_type"] == "A320"
+    assert "origin" not in rows[0] and "dest" not in rows[0]

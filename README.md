@@ -4,15 +4,15 @@
 
 [Guida completa in italiano](docs/guida-italiano.md) · [Download releases](https://github.com/massibrevo/aerotwin/releases) · [Scientific methodology](docs/methodology.md)
 
-AeroTwin **0.2.0** runs a compiled React interface and Python API on **one local server**. No API keys, cloud account, hosted database, telemetry, GPU or LLM. First setup needs Internet for open-source dependencies; the offline demonstration then works without network. Live observations and optional online tiles require network access.
+AeroTwin **0.3.0** runs a compiled React interface and Python API on **one local server**. No API keys, cloud account, hosted database, telemetry, GPU or LLM. First setup needs Internet for open-source dependencies; the offline demonstration then works without network. Live observations and optional online tiles require network access.
 
 > Research, teaching and portfolio use only. No certification for dispatch, air traffic control, navigation or safety decisions. Software tests do not validate real aviation forecasting accuracy.
 
-![Actual AeroTwin control tower, explicitly synthetic](docs/screenshots/control-tower.png)
+![Actual AeroTwin control tower, explicitly synthetic](docs/screenshots/overview-v0.3.png)
 
 ## Install a distribution ZIP
 
-Download `aerotwin-0.2.0.zip` from [Releases](https://github.com/massibrevo/aerotwin/releases), extract it, install **Python 3.12 or 3.13**, and run inside the extracted directory:
+Download `aerotwin-0.3.0.zip` from [Releases](https://github.com/massibrevo/aerotwin/releases), extract it, install **Python 3.12 or 3.13**, and run inside the extracted directory:
 
 ```bash
 python scripts/bootstrap.py
@@ -41,6 +41,16 @@ python scripts/serve.py
 Use `python3.12`/`python3` if appropriate on macOS/Linux or `py -3.12` on Windows. Use `--source-build` to force a frontend rebuild. For development/testing, `python scripts/bootstrap.py --dev` installs test dependencies and compiles; `python scripts/dev.py` retains the separate Vite/API development servers.
 
 Optional **AEROTWIN_HOME** selects a private writable state directory outside the source. Set it consistently for bootstrap, CLI and server. Without it, state stays inside the project. Existing 0.1 BTS snapshots can be read, but legacy models must be retrained. Bootstrap upgrades the demo artifact format. [Backup/update instructions](docs/guida-italiano.md#7-backup-aggiornamenti-e-manutenzione).
+
+## Redesigned radar and workspace
+
+The radar opens a full-height **OpenFreeMap / OpenStreetMap street map**, with an explicit offline fallback, readable aircraft markers and collision-aware callsigns. Its floating panel switches between traffic search and an observation inspector. Follow mode moves the map to the selected aircraft; the trail connects only returned observations while this radar view is open (up to 120 points, reset on query/mode changes, rewind or leaving the page). It is not a verified flight route.
+
+Use **Callsigns**, **Coverage**, **Aircraft filters**, the map-layer menu, zoom/recenter, expanded view and playback controls. Mobile starts with the panel closed; the Traffic button opens a bottom sheet. Demo/replay remain visibly synthetic even over a real street basemap. Street tiles need Internet; **Use offline map** immediately selects the bundled coarse basemap. No Mapbox account, key or paid map service is required.
+
+All pages now use larger type, a brighter multi-colour layout, route accents, light/dark themes and a keyboard command menu (**Ctrl/⌘ K**). Motion respects reduced-motion preferences. Current UI dependency versions are recorded in the lockfile: Motion 14.9, Radix Tooltip 1.4.1, cmdk 1.1.1, Lucide 1.67 and Recharts 3.10.1. [UI notes](docs/radar-ui-v0.3.md).
+
+![Redesigned aircraft inspector on the free street map; all aircraft are synthetic](docs/screenshots/radar-v0.3.png)
 
 ## Working features
 
@@ -96,7 +106,7 @@ AEROTWIN_URL=http://127.0.0.1:5188 npm run test:e2e
 python scripts/package_release.py
 ```
 
-On Windows use `.venv\Scripts\python` and PowerShell environment syntax. See [release verification](docs/evaluation-v0.2.md) and [troubleshooting](docs/troubleshooting.md). Local macOS browser checks can select installed Chrome with `AEROTWIN_BROWSER_CHANNEL=chrome`; Linux CI uses Playwright Chromium.
+On Windows use `.venv\Scripts\python` and PowerShell environment syntax. See [release verification](docs/evaluation-v0.3.md) and [troubleshooting](docs/troubleshooting.md). Local macOS browser checks can select installed Chrome with `AEROTWIN_BROWSER_CHANNEL=chrome`; Linux CI uses Playwright Chromium.
 
 Code/examples **MIT**, offline Natural Earth **public domain**, ADSB.lol observations **ODbL**, optional OpenFreeMap/OSM subject to provider terms and attribution. [Sources/licenses](docs/datasets-and-licenses.md). No public-hosting authentication layer is supplied: keep the server on loopback.
 

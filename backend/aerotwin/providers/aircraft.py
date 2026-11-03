@@ -15,6 +15,8 @@ from pydantic import BaseModel, Field, ValidationError
 class Aircraft(BaseModel):
     icao24: str
     callsign: str | None = None
+    registration: str | None = None
+    aircraft_type: str | None = None
     lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
     lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
     ground_speed_kt: float | None = Field(default=None, ge=0, le=1500, allow_inf_nan=False)
@@ -44,6 +46,8 @@ def parse_response(payload, received=None):
             a = Aircraft(
                 icao24=r["hex"],
                 callsign=(r.get("flight") or "").strip() or None,
+                registration=r.get("r") if isinstance(r.get("r"), str) else None,
+                aircraft_type=r.get("t") if isinstance(r.get("t"), str) else None,
                 lat=r["lat"],
                 lon=r["lon"],
                 ground_speed_kt=r.get("gs"),

@@ -1,298 +1,468 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { geoMercator, geoPath, geoGraticule10 } from "d3-geo";
 import type { FeatureCollection } from "geojson";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import {
+  Layers,
+  Minus,
+  Plus,
+  RotateCcw,
+  Navigation,
+  Check,
+  Map as MapIcon,
+} from "lucide-react";
 import type { Aircraft, Airport } from "./types";
+import {
+  clampLatitude,
+  visibleLabels,
+  coverageRing,
+  PLANE_PATH,
+  type TrackPoint,
+} from "./features/radar/geometry";
 
-export default function RadarMap({
-  aircraft,
-  region,
-  radius,
-  selected,
-  onSelect,
-}: {
+type Props = {
   aircraft: Aircraft[];
   region: Airport;
   radius: number;
   selected?: string;
   onSelect: (a: Aircraft) => void;
-}) {
+  initialOnline?: boolean;
+  follow?: boolean;
+  trail?: TrackPoint[];
+  labels?: boolean;
+  coverage?: boolean;
+  recenter?: number;
+};
+function RadarMap({
+  aircraft,
+  region,
+  radius,
+  selected,
+  onSelect,
+  initialOnline = false,
+  follow = false,
+  trail = [],
+  labels = true,
+  coverage = true,
+  recenter = 0,
+}: Props) {
   const [world, setWorld] = useState<FeatureCollection>();
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState([0, 0]);
-  const [online, setOnline] = useState(false);
+  const [online, setOnline] = useState(initialOnline);
+  const [night, setNight] = useState(false);
+  const [menu, setMenu] = useState(false);
   const [mapError, setMapError] = useState("");
+  const [loaded, setLoaded] = useState(false);
   const host = useRef<HTMLDivElement>(null);
+  const svg = useRef<SVGSVGElement>(null);
   const map = useRef<maplibregl.Map | undefined>(undefined);
-  const drag = useRef<{ x: number; y: number; pan: number[] } | undefined>(
-    undefined,
+  const markers = useRef(
+    new Map<string, { marker: maplibregl.Marker; button: HTMLButtonElement }>(),
   );
-  const refAircraft = useRef(aircraft);
-  refAircraft.current = aircraft;
-  const refSelect = useRef(onSelect);
-  refSelect.current = onSelect;
+  const drag = useRef<
+    { x: number; y: number; pan: number[]; factor: number } | undefined
+  >(undefined);
+  const live = useRef({
+    aircraft,
+    selected,
+    onSelect,
+    labels,
+    coverage,
+    trail,
+    region,
+    radius,
+  });
+  live.current = {
+    aircraft,
+    selected,
+    onSelect,
+    labels,
+    coverage,
+    trail,
+    region,
+    radius,
+  };
   useEffect(() => {
-    fetch("/data/world.geojson")
+    const controller = new AbortController();
+    fetch("/data/world.geojson", { signal: controller.signal })
       .then((r) => r.json())
       .then(setWorld)
-      .catch(() =>
-        setMapError(
-          "Offline map asset missing. Reinstall the repository assets.",
-        ),
-      );
+      .catch((e) => {
+        if (e.name !== "AbortError")
+          setMapError(
+            "Bundled offline geography is missing. Restore the distribution assets.",
+          );
+      });
+    return () => controller.abort();
   }, []);
-  useEffect(() => {
-    setPan([0, 0]);
-    setZoom(1);
-  }, [region.lat, region.lon, radius]);
+  const centerLat = clampLatitude(region.lat);
   const projection = useMemo(
     () =>
       geoMercator()
-        .center([region.lon, region.lat])
+        .center([region.lon, centerLat])
         .scale(
-          ((893814 * Math.cos((region.lat * Math.PI) / 180)) / radius) * zoom,
+          ((893814 * Math.cos((centerLat * Math.PI) / 180)) / radius) * zoom,
         )
         .translate([500 + pan[0], 320 + pan[1]])
         .clipExtent([
           [0, 0],
           [1000, 640],
         ]),
-    [region, radius, zoom, pan],
+    [region.lon, centerLat, radius, zoom, pan],
   );
-  const path = geoPath(projection);
-  const geojson = useMemo(
-    () => ({
-      type: "FeatureCollection" as const,
-      features: aircraft.map((a) => ({
-        type: "Feature" as const,
-        id: a.icao24,
-        geometry: { type: "Point" as const, coordinates: [a.lon, a.lat] },
-        properties: {
-          icao24: a.icao24,
-          label: a.callsign ?? a.icao24,
-          heading: a.track_deg ?? 0,
+  const land = useMemo(() => {
+    const draw = geoPath(projection);
+    return world?.features.map((f, i) => (
+      <path key={i} className="land" d={draw(f) ?? ""} />
+    ));
+  }, [world, projection]);
+  const offlineLabels = useMemo(
+    () =>
+      visibleLabels(
+        aircraft.map((a) => {
+          const p = projection([a.lon, clampLatitude(a.lat)]) ?? [0, 0];
+          return {
+            id: a.icao24,
+            x: p[0],
+            y: p[1],
+            text: a.callsign ?? a.icao24,
+          };
+        }),
+        selected,
+      ),
+    [aircraft, projection, selected],
+  );
+  const draw = geoPath(projection);
+  const reset = () => {
+    setZoom(1);
+    setPan([0, 0]);
+    const m = map.current;
+    if (m) {
+      const delta = radius / 60;
+      m.fitBounds(
+        [
+          [
+            region.lon -
+              delta / Math.max(0.1, Math.cos((centerLat * Math.PI) / 180)),
+            clampLatitude(centerLat - delta),
+          ],
+          [
+            region.lon +
+              delta / Math.max(0.1, Math.cos((centerLat * Math.PI) / 180)),
+            clampLatitude(centerLat + delta),
+          ],
+        ],
+        {
+          padding: { left: 60, right: 60, top: 80, bottom: 80 },
+          duration: 600,
         },
-      })),
-    }),
-    [aircraft],
-  );
+      );
+    }
+  };
+  useEffect(() => {
+    reset();
+  }, [region.lat, region.lon, radius, recenter]);
   useEffect(() => {
     if (!online || !host.current) return;
+    setLoaded(false);
     let m: maplibregl.Map;
     try {
       m = new maplibregl.Map({
         container: host.current,
-        style: "https://tiles.openfreemap.org/styles/dark",
-        center: [region.lon, region.lat],
+        style: `https://tiles.openfreemap.org/styles/${night ? "dark" : "liberty"}`,
+        center: [region.lon, centerLat],
         zoom: 7,
+        attributionControl: { compact: true },
+        renderWorldCopies: false,
       });
     } catch {
-      setMapError("WebGL unavailable. Using the bundled offline map.");
+      setMapError(
+        "WebGL is unavailable. The offline map remains fully interactive.",
+      );
       setOnline(false);
       return;
     }
     map.current = m;
-    m.addControl(new maplibregl.NavigationControl(), "top-right");
     let failures = 0;
+    let finished = false;
+    const fail = (message: string) => {
+      if (finished) return;
+      finished = true;
+      setMapError(message);
+      setOnline(false);
+    };
     m.on("error", () => {
-      if (++failures > 2) {
-        setMapError("Online tiles unavailable. Offline map remains available.");
-        setOnline(false);
-      }
+      if (++failures >= 3)
+        fail("Online map unavailable. Showing the bundled offline map.");
     });
     m.on("load", () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 48;
-      canvas.height = 48;
-      const c = canvas.getContext("2d")!;
-      c.fillStyle = "#48c7dd";
-      c.beginPath();
-      c.moveTo(24, 3);
-      c.lineTo(29, 20);
-      c.lineTo(44, 30);
-      c.lineTo(44, 35);
-      c.lineTo(28, 29);
-      c.lineTo(28, 39);
-      c.lineTo(34, 43);
-      c.lineTo(34, 46);
-      c.lineTo(24, 43);
-      c.lineTo(14, 46);
-      c.lineTo(14, 43);
-      c.lineTo(20, 39);
-      c.lineTo(20, 29);
-      c.lineTo(4, 35);
-      c.lineTo(4, 30);
-      c.lineTo(19, 20);
-      c.closePath();
-      c.fill();
-      m.addImage("plane", c.getImageData(0, 0, 48, 48));
-      m.addSource("aircraft", {
+      if (finished) return;
+      setLoaded(true);
+      const v = live.current;
+      if (!night)
+        for (const layer of m.getStyle().layers)
+          if (layer.type === "fill" && /water/.test(layer.id))
+            m.setPaintProperty(layer.id, "fill-color", "#c8dfe9");
+      m.addSource("coverage", {
+        type: "geojson",
+        data: coverageRing(v.region.lat, v.region.lon, v.radius),
+      });
+      m.addLayer({
+        id: "coverage-fill",
+        type: "fill",
+        source: "coverage",
+        paint: { "fill-color": "#1479bc", "fill-opacity": 0.025 },
+      });
+      m.addLayer({
+        id: "coverage-line",
+        type: "line",
+        source: "coverage",
+        paint: {
+          "line-color": night ? "#80cadb" : "#3086b4",
+          "line-width": 1.5,
+          "line-dasharray": [4, 5],
+          "line-opacity": 0.65,
+        },
+      });
+      m.addSource("observed-trail", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
       m.addLayer({
-        id: "aircraft",
-        type: "symbol",
-        source: "aircraft",
-        layout: {
-          "icon-image": "plane",
-          "icon-size": 0.55,
-          "icon-rotate": ["get", "heading"],
-          "icon-rotation-alignment": "map",
-          "icon-allow-overlap": true,
-          "text-field": ["get", "label"],
-          "text-size": 10,
-          "text-offset": [0, 2],
-          "text-allow-overlap": false,
-        },
-        paint: { "text-color": "#e0f5fa" },
+        id: "observed-trail-line",
+        type: "line",
+        source: "observed-trail",
+        paint: { "line-color": "#047cba", "line-width": 3 },
       });
-      const data: GeoJSON.FeatureCollection = {
-        type: "FeatureCollection",
-        features: refAircraft.current.map((a) => ({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [a.lon, a.lat] },
-          properties: {
-            icao24: a.icao24,
-            label: a.callsign ?? a.icao24,
-            heading: a.track_deg ?? 0,
-          },
-        })),
-      };
-      (m.getSource("aircraft") as maplibregl.GeoJSONSource).setData(data);
-      m.on("click", "aircraft", (e) => {
-        const a = refAircraft.current.find(
-          (a) => a.icao24 === e.features?.[0].properties?.icao24,
-        );
-        if (a) refSelect.current(a);
-      });
+      const delta = v.radius / 60,
+        cos = Math.max(0.1, Math.cos((v.region.lat * Math.PI) / 180));
+      m.fitBounds(
+        [
+          [v.region.lon - delta / cos, clampLatitude(v.region.lat - delta)],
+          [v.region.lon + delta / cos, clampLatitude(v.region.lat + delta)],
+        ],
+        { padding: { left: 50, right: 50, top: 60, bottom: 70 }, duration: 0 },
+      );
     });
     const timeout = setTimeout(() => {
-      if (!m.isStyleLoaded()) {
-        setMapError("Online map timed out. Use the bundled offline map.");
-        setOnline(false);
-      }
-    }, 15000);
+      if (!m.isStyleLoaded())
+        fail("Online map timed out. Showing the bundled offline map.");
+    }, 12000);
+    const resize = new ResizeObserver(() => m.resize());
+    resize.observe(host.current);
     return () => {
+      finished = true;
       clearTimeout(timeout);
+      resize.disconnect();
+      markers.current.forEach((v) => v.marker.remove());
+      markers.current.clear();
       m.remove();
       map.current = undefined;
+      setLoaded(false);
     };
-  }, [online]); // region and aircraft update without rebuilding the map
+  }, [online, night]);
   useEffect(() => {
-    if (map.current?.getSource("aircraft"))
-      (map.current.getSource("aircraft") as maplibregl.GeoJSONSource).setData(
-        geojson,
+    const m = map.current;
+    if (!m || !loaded) return;
+    const ids = new Set(aircraft.map((a) => a.icao24));
+    for (const [id, v] of markers.current)
+      if (!ids.has(id)) {
+        v.marker.remove();
+        markers.current.delete(id);
+      }
+    for (const a of aircraft) {
+      let item = markers.current.get(a.icao24);
+      if (!item) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "map-aircraft aircraft";
+        button.innerHTML = `<span class="plane-symbol"><svg viewBox="-18 -18 36 36" aria-hidden="true"><path d="${PLANE_PATH}"/></svg></span><span class="aircraft-label"></span>`;
+        button.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const current = live.current.aircraft.find(
+            (x) => x.icao24 === a.icao24,
+          );
+          if (current) live.current.onSelect(current);
+        });
+        item = {
+          button,
+          marker: new maplibregl.Marker({ element: button, anchor: "center" })
+            .setLngLat([a.lon, clampLatitude(a.lat)])
+            .addTo(m),
+        };
+        markers.current.set(a.icao24, item);
+      }
+      item.marker.setLngLat([a.lon, clampLatitude(a.lat)]);
+      item.button.classList.toggle("is-selected", a.icao24 === selected);
+      item.button.classList.toggle("show-label", labels);
+      item.button.classList.toggle("unknown-track", a.track_deg == null);
+      item.button.setAttribute(
+        "aria-label",
+        `Select ${a.callsign ?? a.icao24}`,
       );
-  }, [geojson]);
+      item.button.setAttribute("aria-pressed", String(a.icao24 === selected));
+      item.button.title = `${a.callsign ?? a.icao24} · ${a.altitude_ft == null ? "Unknown altitude" : a.altitude_ft.toLocaleString() + " ft"} · ${a.ground_speed_kt ?? "—"} kt`;
+      const label = item.button.querySelector(".aircraft-label")!;
+      label.textContent = a.callsign ?? a.icao24.toUpperCase();
+      (
+        item.button.querySelector(".plane-symbol") as HTMLElement
+      ).style.transform = `rotate(${a.track_deg ?? 0}deg)`;
+    }
+    const placeLabels = () => {
+      const allowed = visibleLabels(
+        aircraft.map((a) => {
+          const p = m.project([a.lon, clampLatitude(a.lat)]);
+          return { id: a.icao24, x: p.x, y: p.y, text: a.callsign ?? a.icao24 };
+        }),
+        selected,
+      );
+      for (const [id, item] of markers.current)
+        item.button.classList.toggle("show-label", labels && allowed.has(id));
+    };
+    placeLabels();
+    m.on("moveend", placeLabels);
+    return () => {
+      m.off("moveend", placeLabels);
+    };
+  }, [aircraft, selected, labels, loaded]);
   useEffect(() => {
-    map.current?.flyTo({ center: [region.lon, region.lat] });
-  }, [region]);
+    const m = map.current;
+    if (!m || !loaded) return;
+    (m.getSource("coverage") as maplibregl.GeoJSONSource)?.setData(
+      coverageRing(region.lat, region.lon, radius),
+    );
+    for (const id of ["coverage-line", "coverage-fill"])
+      m.setLayoutProperty(id, "visibility", coverage ? "visible" : "none");
+    const data: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features:
+        trail.length > 1
+          ? [
+              {
+                type: "Feature",
+                properties: {},
+                geometry: {
+                  type: "LineString",
+                  coordinates: trail.map((p) => [p.lon, clampLatitude(p.lat)]),
+                },
+              },
+            ]
+          : [],
+    };
+    (m.getSource("observed-trail") as maplibregl.GeoJSONSource)?.setData(data);
+  }, [region, radius, coverage, trail, loaded]);
+  useEffect(() => {
+    const a = aircraft.find((a) => a.icao24 === selected);
+    if (!follow || !a) return;
+    if (online)
+      map.current?.easeTo({
+        center: [a.lon, clampLatitude(a.lat)],
+        duration: 650,
+      });
+    else {
+      const point = projection([a.lon, clampLatitude(a.lat)]);
+      if (point)
+        setPan((old) => [old[0] + 500 - point[0], old[1] + 320 - point[1]]);
+    }
+  }, [aircraft, selected, follow, online, loaded]);
   return (
-    <div className="radar-map">
-      <div className="map-toolbar">
-        <span className="tiny">
-          <i className="dot" /> {online ? "ONLINE TILES" : "OFFLINE VECTOR MAP"}
-        </span>
-        <button
-          onClick={() => {
-            setMapError("");
-            setOnline(!online);
-          }}
-        >
-          {online ? "Use offline map" : "Enable online map"}
-        </button>
-      </div>
+    <div
+      className={`radar-map ${night ? "map-night" : "map-day"} ${online ? "map-online" : "map-offline"}`}
+    >
       {online ? (
-        <div ref={host} className="online-map" />
+        <div
+          ref={host}
+          className="online-map"
+          data-map-ready={loaded}
+          aria-label="OpenFreeMap street map"
+        />
       ) : (
         <svg
+          ref={svg}
           viewBox="0 0 1000 640"
+          preserveAspectRatio="xMidYMid slice"
           className="map-svg"
           aria-label="Interactive aircraft radar"
           onWheel={(e) =>
             setZoom((z) =>
-              Math.max(0.3, Math.min(8, z * (e.deltaY < 0 ? 1.15 : 0.87))),
+              Math.max(0.3, Math.min(12, z * (e.deltaY < 0 ? 1.12 : 0.89))),
             )
           }
           onPointerDown={(e) => {
-            if (
-              e.target === e.currentTarget ||
-              (e.target as Element).classList.contains("land")
-            ) {
-              drag.current = { x: e.clientX, y: e.clientY, pan };
-              e.currentTarget.setPointerCapture(e.pointerId);
-            }
+            if ((e.target as Element).closest(".aircraft")) return;
+            drag.current = {
+              x: e.clientX,
+              y: e.clientY,
+              pan,
+              factor:
+                1 /
+                Math.max(
+                  (svg.current?.getBoundingClientRect().width ?? 1000) / 1000,
+                  (svg.current?.getBoundingClientRect().height ?? 640) / 640,
+                ),
+            };
+            e.currentTarget.setPointerCapture(e.pointerId);
           }}
           onPointerMove={(e) => {
             if (drag.current)
               setPan([
-                drag.current.pan[0] + (e.clientX - drag.current.x),
-                drag.current.pan[1] + (e.clientY - drag.current.y),
+                drag.current.pan[0] +
+                  (e.clientX - drag.current.x) * drag.current.factor,
+                drag.current.pan[1] +
+                  (e.clientY - drag.current.y) * drag.current.factor,
               ]);
           }}
           onPointerUp={() => {
             drag.current = undefined;
           }}
+          onPointerCancel={() => {
+            drag.current = undefined;
+          }}
         >
           <defs>
             <pattern
-              id="grid"
-              width="70"
-              height="70"
+              id="radar-grid"
+              width="80"
+              height="80"
               patternUnits="userSpaceOnUse"
             >
-              <path
-                d="M70 0H0V70"
-                fill="none"
-                stroke="#1a3041"
-                strokeWidth=".6"
-              />
+              <path d="M80 0H0V80" className="map-grid" fill="none" />
             </pattern>
-            <radialGradient id="scan">
-              <stop stopColor="#48c7dd" stopOpacity=".07" />
-              <stop offset="1" stopColor="#48c7dd" stopOpacity="0" />
-            </radialGradient>
           </defs>
-          <rect width="1000" height="640" fill="#0a1723" />
-          <rect width="1000" height="640" fill="url(#grid)" />
+          <rect className="map-water" width="1000" height="640" />
+          <rect width="1000" height="640" fill="url(#radar-grid)" />
           <path
-            d={path(geoGraticule10()) ?? ""}
-            stroke="#1c3546"
+            d={draw(geoGraticule10()) ?? ""}
+            className="map-graticule"
             fill="none"
-            strokeWidth=".5"
           />
-          {world?.features.map((f, i) => (
+          {land}
+          {coverage && (
             <path
-              key={i}
-              className="land"
-              d={path(f) ?? ""}
-              fill="#142b36"
-              stroke="#2c4651"
-              strokeWidth=".9"
+              className="coverage-ring"
+              d={draw(coverageRing(region.lat, region.lon, radius)) ?? ""}
             />
-          ))}
-          <circle cx="500" cy="320" r="260" fill="url(#scan)" />
-          {[85, 170, 260].map((r) => (
-            <circle
-              key={r}
-              cx="500"
-              cy="320"
-              r={r}
-              fill="none"
-              stroke="#48c7dd"
-              strokeOpacity=".13"
-              strokeDasharray="3 7"
+          )}
+          {trail.length > 1 && (
+            <path
+              className="observed-trail"
+              d={
+                draw({
+                  type: "LineString",
+                  coordinates: trail.map((p) => [p.lon, clampLatitude(p.lat)]),
+                }) ?? ""
+              }
             />
-          ))}
+          )}
           {(() => {
-            const p = projection([region.lon, region.lat]);
+            const point = projection([region.lon, centerLat]);
             return (
-              p && (
-                <g transform={`translate(${p})`}>
-                  <circle r="5" fill="#f2bd77" />
-                  <text x="10" y="4" fill="#f2bd77" fontSize="12">
+              point && (
+                <g transform={`translate(${point})`} className="airport-marker">
+                  <circle r="7" />
+                  <text x="13" y="5">
                     {region.iata}
                   </text>
                 </g>
@@ -300,16 +470,24 @@ export default function RadarMap({
             );
           })()}
           {aircraft.map((a) => {
-            const p = projection([a.lon, a.lat]);
-            if (!p) return null;
+            const point = projection([a.lon, clampLatitude(a.lat)]);
+            if (
+              !point ||
+              point[0] < 0 ||
+              point[0] > 1000 ||
+              point[1] < 0 ||
+              point[1] > 640
+            )
+              return null;
             return (
               <g
                 key={a.icao24}
-                transform={`translate(${p})`}
-                className="aircraft"
+                transform={`translate(${point})`}
+                className={`aircraft svg-aircraft ${a.icao24 === selected ? "is-selected" : ""}`}
                 role="button"
                 tabIndex={0}
                 aria-label={`Select ${a.callsign ?? a.icao24}`}
+                aria-pressed={a.icao24 === selected}
                 onClick={() => onSelect(a)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -319,67 +497,128 @@ export default function RadarMap({
                 }}
               >
                 <rect
-                  x="-15"
-                  y="-26"
-                  width="82"
-                  height="44"
+                  className="aircraft-hitbox"
+                  x="-21"
+                  y="-24"
+                  width="84"
+                  height="48"
                   fill="transparent"
                 />
-                {selected === a.icao24 && (
-                  <circle r="20" fill="#48c7dd22" stroke="#48c7dd" />
+                {a.icao24 === selected && (
+                  <circle className="selection-halo" r="25" />
                 )}
                 <path
+                  className="plane-path"
                   transform={`rotate(${a.track_deg ?? 0})`}
-                  d="M0-12 3-2 12 4 12 7 3 3 3 9 6 12 6 14 0 12 -6 14 -6 12 -3 9 -3 3 -12 7 -12 4 -3-2Z"
-                  fill={selected === a.icao24 ? "#fff" : "#48c7dd"}
-                  stroke="#08111d"
-                  strokeWidth=".6"
+                  d={PLANE_PATH}
                 />
-                <text x="13" y="-12" fontSize="10" fill="#9fbac8">
-                  {a.callsign}
-                </text>
+                {((labels && offlineLabels.has(a.icao24)) ||
+                  a.icao24 === selected) && (
+                  <text className="plane-label" x="18" y="-13">
+                    {a.callsign ?? a.icao24.toUpperCase()}
+                  </text>
+                )}
                 <title>
                   {a.callsign} · {a.altitude_ft ?? "Unknown"} ft
                 </title>
               </g>
             );
           })}
-          <text x="24" y="612" fill="#66818f" fontSize="11">
-            {region.lat.toFixed(3)}° N / {region.lon.toFixed(3)}° E · {radius}{" "}
-            NM · scroll to zoom / drag to pan
-          </text>
         </svg>
       )}
-      {!online && (
-        <div className="map-zoom">
-          <button
-            aria-label="Zoom in"
-            onClick={() => setZoom((z) => Math.min(8, z * 1.3))}
-          >
-            +
-          </button>
-          <button
-            aria-label="Zoom out"
-            onClick={() => setZoom((z) => Math.max(0.3, z / 1.3))}
-          >
-            −
-          </button>
-          <button
-            aria-label="Reset map"
-            onClick={() => {
-              setZoom(1);
-              setPan([0, 0]);
-            }}
-          >
-            ⌖
-          </button>
-        </div>
-      )}
+      <div className="map-toolbar">
+        <button
+          onClick={() => setMenu(!menu)}
+          aria-expanded={menu}
+          className="map-layers-button"
+        >
+          <Layers size={17} />
+          {online ? (night ? "Dark map" : "Street map") : "Offline map"}
+        </button>
+        <button
+          className="basemap-toggle"
+          onClick={() => {
+            setMapError("");
+            setOnline(!online);
+          }}
+        >
+          {online ? "Use offline map" : "Enable online map"}
+        </button>
+        {menu && (
+          <div className="map-layer-menu">
+            <span className="overline">BASEMAP</span>
+            {[
+              { label: "Street map", net: true, dark: false },
+              { label: "Dark map", net: true, dark: true },
+              { label: "Offline map", net: false, dark: night },
+            ].map((o) => (
+              <button
+                key={o.label}
+                onClick={() => {
+                  setNight(o.dark);
+                  setOnline(o.net);
+                  setMapError("");
+                  setMenu(false);
+                }}
+              >
+                <MapIcon size={16} />
+                {o.label}
+                {online === o.net && (!online || night === o.dark) && (
+                  <Check size={15} />
+                )}
+              </button>
+            ))}
+            <p>
+              OpenFreeMap · OpenStreetMap data
+              <br />
+              Offline: Natural Earth, coarse geometry
+            </p>
+          </div>
+        )}
+      </div>
+      <div className="map-zoom">
+        <button
+          aria-label="Zoom in"
+          title="Zoom in"
+          onClick={() =>
+            online
+              ? map.current?.zoomIn()
+              : setZoom((z) => Math.min(12, z * 1.3))
+          }
+        >
+          <Plus size={20} />
+        </button>
+        <button
+          aria-label="Zoom out"
+          title="Zoom out"
+          onClick={() =>
+            online
+              ? map.current?.zoomOut()
+              : setZoom((z) => Math.max(0.3, z / 1.3))
+          }
+        >
+          <Minus size={20} />
+        </button>
+        <button
+          aria-label="Reset map"
+          title="Fit queried coverage"
+          onClick={reset}
+        >
+          <Navigation size={18} />
+        </button>
+        <button
+          aria-label="Reset map bearing"
+          title="North up"
+          onClick={() => map.current?.resetNorth()}
+          disabled={!online}
+        >
+          <RotateCcw size={17} />
+        </button>
+      </div>
       <div className="map-attribution">
-        Made with Natural Earth ·{" "}
         {online
-          ? "OpenFreeMap / © OpenStreetMap contributors"
-          : "Public domain basemap · no network tiles"}
+          ? "OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors"
+          : "Natural Earth · Public domain · Offline geography"}
       </div>
       {mapError && (
         <div className="map-warning" role="status">
@@ -389,3 +628,4 @@ export default function RadarMap({
     </div>
   );
 }
+export default memo(RadarMap);

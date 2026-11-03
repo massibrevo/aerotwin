@@ -14,6 +14,7 @@ export default defineConfig({
         manualChunks: {
           maplibre: ["maplibre-gl"],
           charts: ["recharts"],
+          interface: ["motion/react", "@radix-ui/react-tooltip", "cmdk"],
           react: ["react", "react-dom", "react-router-dom"],
         },
       },

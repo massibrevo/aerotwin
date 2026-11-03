@@ -1,10 +1,10 @@
-# AeroTwin 0.2 — installazione, uso e interpretazione
+# AeroTwin 0.3 — installazione, uso e interpretazione
 
 AeroTwin è un'applicazione locale per osservare posizioni ADS-B, esplorare dati di programma dei voli, addestrare modelli temporali e confrontare scenari di coda. Questa distribuzione è pensata per una persona su un computer fidato, per ricerca, portfolio e didattica. La solidità tecnica dell'applicazione non equivale alla validazione aeronautica delle previsioni.
 
 ## 1. Installazione dalla distribuzione ZIP
 
-1. Scarica `aerotwin-0.2.0.zip` dalla release GitHub ed estrailo in una cartella scrivibile. Conserva tutti i file e le sottocartelle. Il relativo `.sha256` permette di controllare che il download sia integro; non è una firma digitale.
+1. Scarica `aerotwin-0.3.0.zip` dalla release GitHub ed estrailo in una cartella scrivibile. Conserva tutti i file e le sottocartelle. Il relativo `.sha256` permette di controllare che il download sia integro; non è una firma digitale.
 2. Installa Python **3.12 o 3.13**, con `pip` e `venv`. La prima preparazione scarica le librerie Python: serve Internet. La versione ZIP contiene già l'interfaccia compilata e non richiede Node.js per preparazione/esecuzione.
 3. Apri un terminale nella cartella estratta ed esegui:
 
@@ -40,6 +40,13 @@ python scripts/serve.py
 Per sviluppare: `python scripts/bootstrap.py --dev`, poi `python scripts/dev.py`. Questa modalità usa due server e Vite; non è il normale avvio della distribuzione. `--source-build` ricompila l'interfaccia anche quando esiste già una cartella `dist`.
 
 ## 3. Primo giro consigliato
+
+La versione 0.3 ridisegna tutte le pagine: tema chiaro/scuro con il pulsante luna/sole e menu di navigazione con Ctrl/⌘ K. Il radar usa lo schermo per la mappa, con pannello traffico e scheda aeromobile flottanti. Su telefono il pannello è inizialmente chiuso: premi **Traffic** per aprirlo.
+
+La modalità dei dati e quella della mappa sono separate: **Synthetic demo** può apparire su una mappa stradale reale. **Street map** usa OpenFreeMap/OSM e richiede Internet; **Use offline map** seleziona subito la geometria locale. In caso di mancato caricamento dei tile, la mappa locale si attiva con un avviso. **Dark map** è un'altra opzione nel selettore dei livelli.
+
+Seleziona un aeromobile, usa **Follow aircraft** per seguirne la posizione e **Observed trail** per la traccia delle osservazioni raccolte in questa visita al radar (massimo 120 punti). La traccia riparte cambiando area/modalità, riavvolgendo il replay o uscendo dalla pagina; non è una rotta completa. Registrazione e tipo compaiono solo quando forniti dal feed. Le etichette sono ridotte automaticamente quando si sovrappongono; l'aeromobile selezionato resta identificabile.
+
 
 - **Control tower**: guarda sorgente, numero di record, intervallo temporale e qualità. I conteggi degli aeromobili e le statistiche dei voli sono strati diversi.
 - **Live radar / Synthetic demo**: seleziona un simbolo o una riga; osserva callsign, coordinate, quota (ft), velocità (kt), track e timestamp. Ricerca e slider filtrano le posizioni mostrate. Le quote mancanti restano sconosciute; non diventano zero.
@@ -123,4 +130,4 @@ Le snapshot e gli artefatti precedenti restano conservati: l'occupazione su disc
 - Mappe Natural Earth a bassa risoluzione e MapLibre non sono carte aeronautiche. Non usare l'app per navigazione.
 - Nessuna validazione/certificazione per dispatch, ATC o decisioni di sicurezza. Una CI verde dimostra i controlli software eseguiti, non l'accuratezza operativa dei modelli.
 
-Per formule e dettagli consulta `methodology.md`, `model-card.md`, `datasets-and-licenses.md` e `evaluation-v0.2.md`.
+Per formule e dettagli consulta `methodology.md`, `model-card.md`, `datasets-and-licenses.md` e `evaluation-v0.3.md`.
